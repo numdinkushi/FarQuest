@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Input } from "../components/ui/input";
+import { Input } from "./ui/input";
 import { signIn, signOut, getCsrfToken } from "next-auth/react";
 import sdk, {
   SignIn as SignInCore,
@@ -28,7 +28,7 @@ import { Label } from "~/components/ui/label";
 import { useFrame } from "~/components/providers/FrameProvider";
 
 export default function Demo(
-  { title }: { title?: string } = { title: "Frames v2 Demo" }
+  { title }: { title?: string; } = { title: "Frames v2 Demo" }
 ) {
   const { isSDKLoaded, context, added, notificationDetails, lastEvent, addFrame, addFrameResult } = useFrame();
   const [isContextOpen, setIsContextOpen] = useState(false);
@@ -189,9 +189,8 @@ export default function Demo(
             className="flex items-center gap-2 transition-colors"
           >
             <span
-              className={`transform transition-transform ${
-                isContextOpen ? "rotate-90" : ""
-              }`}
+              className={`transform transition-transform ${isContextOpen ? "rotate-90" : ""
+                }`}
             >
               ➤
             </span>
@@ -358,8 +357,8 @@ export default function Demo(
                       {isConfirming
                         ? "Confirming..."
                         : isConfirmed
-                        ? "Confirmed!"
-                        : "Pending"}
+                          ? "Confirmed!"
+                          : "Pending"}
                     </div>
                   </div>
                 )}
@@ -480,8 +479,8 @@ function SendEth() {
             {isConfirming
               ? "Confirming..."
               : isConfirmed
-              ? "Confirmed!"
-              : "Pending"}
+                ? "Confirmed!"
+                : "Pending"}
           </div>
         </div>
       )}
