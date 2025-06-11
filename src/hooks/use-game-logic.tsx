@@ -25,9 +25,12 @@ export const useGameLogic = () => {
         crystalsCollected: 0
     });
 
+    const totalNumberOfQuestions = QUESTIONS.length;
+
     // Track consecutive correct answers for bonus system
     const [consecutiveCorrect, setConsecutiveCorrect] = useState<number>(0);
     const [isBonus, setIsBonus] = useState<boolean>(false);
+    const [isGameOver, setIsGameOver] = useState<boolean>(false);
 
     useEffect(() => {
         let interval: NodeJS.Timeout | null = null;
@@ -46,6 +49,7 @@ export const useGameLogic = () => {
     // Check for game over when health reaches 0
     useEffect(() => {
         if (playerStats.health <= 0 && gameState.state === 'playing') {
+            setIsGameOver(true);
             setGameState(prev => ({ ...prev, state: 'complete', isTimerActive: false }));
         }
     }, [playerStats.health, gameState.state]);
@@ -81,6 +85,7 @@ export const useGameLogic = () => {
         });
         setConsecutiveCorrect(0);
         setIsBonus(false);
+        setIsGameOver(false);
     };
 
     const handleAnswer = (answerIndex: number): void => {
@@ -135,6 +140,7 @@ export const useGameLogic = () => {
 
             // Check if health is 0 or below before continuing
             if (playerStats.health - (isCorrect ? 0 : 20) <= 0) {
+                setIsGameOver(true);
                 setGameState(prev => ({ ...prev, state: 'complete', isTimerActive: false }));
                 return;
             }
@@ -149,6 +155,7 @@ export const useGameLogic = () => {
                     isTimerActive: true
                 }));
             } else {
+                setIsGameOver(false); // Successfully completed all questions
                 setGameState(prev => ({ ...prev, state: 'complete', isTimerActive: false }));
             }
         }, 2000);
@@ -166,6 +173,7 @@ export const useGameLogic = () => {
         setTimeout(() => {
             // Check if health is 0 or below before continuing
             if (playerStats.health - 20 <= 0) {
+                setIsGameOver(true);
                 setGameState(prev => ({ ...prev, state: 'complete' }));
                 return;
             }
@@ -180,6 +188,7 @@ export const useGameLogic = () => {
                     isTimerActive: true
                 }));
             } else {
+                setIsGameOver(false); // Successfully completed all questions
                 setGameState(prev => ({ ...prev, state: 'complete' }));
             }
         }, 2000);
@@ -205,6 +214,7 @@ export const useGameLogic = () => {
         });
         setConsecutiveCorrect(0);
         setIsBonus(false);
+        setIsGameOver(false);
     };
 
     return {
@@ -213,12 +223,14 @@ export const useGameLogic = () => {
         playerStats,
         consecutiveCorrect,
         isBonus,
+        isGameOver,
         connectWallet,
         disconnectWallet,
         startGame,
         handleAnswer,
         claimRewards,
         resetGame,
-        currentQuestion: QUESTIONS[gameState.currentQuestion]
+        currentQuestion: QUESTIONS[gameState.currentQuestion],
+        totalNumberOfQuestions
     };
 };

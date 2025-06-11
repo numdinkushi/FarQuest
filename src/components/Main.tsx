@@ -10,6 +10,7 @@ const FarquestGame: React.FC = () => {
     wallet,
     gameState,
     playerStats,
+    isGameOver,
     isBonus,
     connectWallet,
     disconnectWallet,
@@ -17,7 +18,8 @@ const FarquestGame: React.FC = () => {
     handleAnswer,
     claimRewards,
     resetGame,
-    currentQuestion
+    currentQuestion,
+    totalNumberOfQuestions
   } = useGameLogic();
 
   return (
@@ -39,6 +41,8 @@ const FarquestGame: React.FC = () => {
           currentQuestion={currentQuestion}
           wallet={wallet}
           isBonus={isBonus}
+          isGameOver={isGameOver}
+          totalNumberOfQuestions={totalNumberOfQuestions}
           onStartGame={startGame}
           onAnswerSelect={handleAnswer}
           onClaimRewards={claimRewards}

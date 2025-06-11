@@ -15,10 +15,12 @@ interface GameContentProps {
     currentQuestion: Question;
     wallet: { isConnected: boolean; };
     isBonus: boolean;
+    isGameOver: boolean;
     onStartGame: () => void;
     onAnswerSelect: (answerIndex: number) => void;
     onClaimRewards: () => Promise<void>;
     onResetGame: () => void;
+    totalNumberOfQuestions: number;
 }
 
 export const GameContent: React.FC<GameContentProps> = ({
@@ -27,10 +29,12 @@ export const GameContent: React.FC<GameContentProps> = ({
     currentQuestion,
     wallet,
     isBonus,
+    isGameOver,
     onStartGame,
     onAnswerSelect,
     onClaimRewards,
-    onResetGame
+    onResetGame,
+    totalNumberOfQuestions
 }) => {
     return (
         <div className="p-6">
@@ -55,11 +59,12 @@ export const GameContent: React.FC<GameContentProps> = ({
                         <QuestionDisplay
                             question={currentQuestion}
                             questionNumber={gameState.currentQuestion + 1}
-                            totalQuestions={5}
+                            totalQuestions={totalNumberOfQuestions}
                             selectedAnswer={gameState.selectedAnswer}
                             showFeedback={gameState.showFeedback}
                             onAnswerSelect={onAnswerSelect}
                         />
+
                         <AnimatePresence>
                             {gameState.showFeedback && (
                                 <Feedback
@@ -78,6 +83,7 @@ export const GameContent: React.FC<GameContentProps> = ({
                         score={gameState.score}
                         totalQuestions={5}
                         stats={playerStats}
+                        isGameOver={isGameOver}
                         onClaimRewards={onClaimRewards}
                         onResetGame={onResetGame}
                     />
