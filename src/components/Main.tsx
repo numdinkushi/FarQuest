@@ -1,5 +1,4 @@
 import React from 'react';
-;
 import { WalletConnection } from './app/wallet-connection';
 import { GameHeader } from './app/header/header';
 import { useGameLogic } from '~/hooks/use-game-logic';
@@ -11,6 +10,7 @@ const FarquestGame: React.FC = () => {
     wallet,
     gameState,
     playerStats,
+    isBonus,
     connectWallet,
     disconnectWallet,
     startGame,
@@ -38,6 +38,7 @@ const FarquestGame: React.FC = () => {
           playerStats={playerStats}
           currentQuestion={currentQuestion}
           wallet={wallet}
+          isBonus={isBonus}
           onStartGame={startGame}
           onAnswerSelect={handleAnswer}
           onClaimRewards={claimRewards}

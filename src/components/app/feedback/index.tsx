@@ -5,13 +5,16 @@ import { Question } from '~/types';
 interface FeedbackProps {
     isCorrect: boolean;
     isTimeUp: boolean;
+    isBonus: boolean;
     reward: Question['reward'];
 }
 
-export const Feedback: React.FC<FeedbackProps> = ({ isCorrect, isTimeUp, reward }) => {
+export const Feedback: React.FC<FeedbackProps> = ({ isCorrect, isTimeUp, isBonus, reward }) => {
     const getFeedbackStyle = () => {
         if (isCorrect) {
-            return 'bg-green-600/20 border-green-500/50 text-green-400';
+            return isBonus
+                ? 'bg-gradient-to-r from-green-600/20 to-blue-600/20 border-green-500/50 text-green-400'
+                : 'bg-green-600/20 border-green-500/50 text-green-400';
         } else if (isTimeUp) {
             return 'bg-yellow-600/20 border-yellow-500/50 text-yellow-400';
         } else {
@@ -21,10 +24,13 @@ export const Feedback: React.FC<FeedbackProps> = ({ isCorrect, isTimeUp, reward 
 
     const getFeedbackContent = () => {
         if (isCorrect) {
+            const baseSubtitle = `+${reward.exp} XP, +${reward.crystals} Crystals`;
+            const bonusSubtitle = isBonus ? '+5 Health' : '';
+
             return {
-                emoji: '🎉',
-                title: 'Correct! Well done, adventurer!',
-                subtitle: `+${reward.exp} XP, +${reward.crystals} Crystals`
+                emoji: isBonus ? '🌟' : '🎉',
+                title: isBonus ? '10 Streak Bonus! Amazing!' : 'Correct! Well done, adventurer!',
+                subtitle: bonusSubtitle ? `${baseSubtitle}, ${bonusSubtitle}` : baseSubtitle
             };
         } else if (isTimeUp) {
             return {
@@ -54,6 +60,15 @@ export const Feedback: React.FC<FeedbackProps> = ({ isCorrect, isTimeUp, reward 
                 <div className="text-2xl mb-2">{content.emoji}</div>
                 <p className="font-bold">{content.title}</p>
                 <p className="text-sm mt-1">{content.subtitle}</p>
+                {isBonus && (
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="mt-2 text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full inline-block"
+                    >
+                        ✨ Consecutive Bonus!
+                    </motion.div>
+                )}
             </div>
         </motion.div>
     );

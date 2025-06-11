@@ -14,6 +14,7 @@ interface GameContentProps {
     playerStats: PlayerStats;
     currentQuestion: Question;
     wallet: { isConnected: boolean; };
+    isBonus: boolean;
     onStartGame: () => void;
     onAnswerSelect: (answerIndex: number) => void;
     onClaimRewards: () => Promise<void>;
@@ -25,6 +26,7 @@ export const GameContent: React.FC<GameContentProps> = ({
     playerStats,
     currentQuestion,
     wallet,
+    isBonus,
     onStartGame,
     onAnswerSelect,
     onClaimRewards,
@@ -58,12 +60,12 @@ export const GameContent: React.FC<GameContentProps> = ({
                             showFeedback={gameState.showFeedback}
                             onAnswerSelect={onAnswerSelect}
                         />
-
                         <AnimatePresence>
                             {gameState.showFeedback && (
                                 <Feedback
                                     isCorrect={gameState.selectedAnswer === currentQuestion.correct}
                                     isTimeUp={gameState.timeLeft === 0}
+                                    isBonus={isBonus}
                                     reward={currentQuestion.reward}
                                 />
                             )}

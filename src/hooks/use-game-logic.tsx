@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { QUESTIONS } from '~/constants';
 import { GameState, PlayerStats, WalletState } from '~/types';
 
-
 export const useGameLogic = () => {
     const [wallet, setWallet] = useState<WalletState>({
         isConnected: false,
@@ -26,6 +25,10 @@ export const useGameLogic = () => {
         crystalsCollected: 0
     });
 
+    // Track consecutive correct answers for bonus system
+    const [consecutiveCorrect, setConsecutiveCorrect] = useState<number>(0);
+    const [isBonus, setIsBonus] = useState<boolean>(false);
+
     useEffect(() => {
         let interval: NodeJS.Timeout | null = null;
         if (gameState.isTimerActive && gameState.timeLeft > 0) {
@@ -39,6 +42,13 @@ export const useGameLogic = () => {
             if (interval) clearInterval(interval);
         };
     }, [gameState.isTimerActive, gameState.timeLeft]);
+
+    // Check for game over when health reaches 0
+    useEffect(() => {
+        if (playerStats.health <= 0 && gameState.state === 'playing') {
+            setGameState(prev => ({ ...prev, state: 'complete', isTimerActive: false }));
+        }
+    }, [playerStats.health, gameState.state]);
 
     const connectWallet = async (): Promise<void> => {
         const mockAddress = '0x' + Math.random().toString(16).substr(2, 40);
@@ -69,6 +79,8 @@ export const useGameLogic = () => {
             experience: 0,
             crystalsCollected: 0
         });
+        setConsecutiveCorrect(0);
+        setIsBonus(false);
     };
 
     const handleAnswer = (answerIndex: number): void => {
@@ -81,19 +93,37 @@ export const useGameLogic = () => {
 
         const question = QUESTIONS[gameState.currentQuestion];
         const isCorrect = answerIndex === question.correct;
+        let bonusAwarded = false;
 
         if (isCorrect) {
+            const newConsecutive = consecutiveCorrect + 1;
+            setConsecutiveCorrect(newConsecutive);
+
+            // Check for consecutive bonus (every 10 correct answers)
+            if (newConsecutive % 10 === 0) {
+                bonusAwarded = true;
+                setIsBonus(true);
+            }
+
             setGameState(prev => ({ ...prev, score: prev.score + 1 }));
             setPlayerStats(prev => {
                 const newExp = prev.experience + question.reward.exp;
+                const healthBonus = bonusAwarded ? Math.ceil(prev.health * 0.05) : 0; // 5% health bonus
+                const newHealth = Math.min(100, prev.health + healthBonus); // Cap at 100
+
                 return {
                     ...prev,
+                    health: newHealth,
                     experience: newExp,
                     crystalsCollected: prev.crystalsCollected + question.reward.crystals,
                     level: newExp >= prev.level * 100 ? prev.level + 1 : prev.level
                 };
             });
         } else {
+            // Reset consecutive count on wrong answer
+            setConsecutiveCorrect(0);
+            setIsBonus(false);
+
             setPlayerStats(prev => ({
                 ...prev,
                 health: Math.max(0, prev.health - 20)
@@ -101,6 +131,14 @@ export const useGameLogic = () => {
         }
 
         setTimeout(() => {
+            setIsBonus(false); // Reset bonus flag after showing feedback
+
+            // Check if health is 0 or below before continuing
+            if (playerStats.health - (isCorrect ? 0 : 20) <= 0) {
+                setGameState(prev => ({ ...prev, state: 'complete', isTimerActive: false }));
+                return;
+            }
+
             if (gameState.currentQuestion < QUESTIONS.length - 1) {
                 setGameState(prev => ({
                     ...prev,
@@ -118,9 +156,20 @@ export const useGameLogic = () => {
 
     const handleTimeUp = (): void => {
         setGameState(prev => ({ ...prev, isTimerActive: false, showFeedback: true }));
+
+        // Reset consecutive count on time up
+        setConsecutiveCorrect(0);
+        setIsBonus(false);
+
         setPlayerStats(prev => ({ ...prev, health: Math.max(0, prev.health - 20) }));
 
         setTimeout(() => {
+            // Check if health is 0 or below before continuing
+            if (playerStats.health - 20 <= 0) {
+                setGameState(prev => ({ ...prev, state: 'complete' }));
+                return;
+            }
+
             if (gameState.currentQuestion < QUESTIONS.length - 1) {
                 setGameState(prev => ({
                     ...prev,
@@ -154,12 +203,16 @@ export const useGameLogic = () => {
             timeLeft: 30,
             isTimerActive: false
         });
+        setConsecutiveCorrect(0);
+        setIsBonus(false);
     };
 
     return {
         wallet,
         gameState,
         playerStats,
+        consecutiveCorrect,
+        isBonus,
         connectWallet,
         disconnectWallet,
         startGame,
