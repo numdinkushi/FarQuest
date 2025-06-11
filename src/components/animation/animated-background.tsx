@@ -1,88 +1,76 @@
-import React from 'react';
-import { Particle } from '~/types';
+import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+import { GameState } from '~/types';
 
-interface AnimatedBackgroundProps {
-    particles: Particle[];
+interface ThreeJSBackgroundProps {
+  gameState: GameState['state'];
 }
 
-const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({ particles }) => {
-    return (
-        <>
-            <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-                {/* Animated gradient overlays */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/20 via-transparent to-cyan-500/20 animate-pulse"></div>
-                <div className="absolute inset-0 bg-gradient-to-bl from-yellow-500/10 via-transparent to-green-500/10 animate-float"></div>
+export const ThreeJSBackground: React.FC<ThreeJSBackgroundProps> = ({ gameState }) => {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const frameRef = useRef<number | null>(null);
 
-                {/* Floating particles */}
-                {particles.map((particle) => (
-                    <div
-                        key={particle.id}
-                        className="absolute rounded-full bg-white/20 animate-pulse animate-float"
-                        style={{
-                            width: `${particle.size}px`,
-                            height: `${particle.size}px`,
-                            left: `${particle.x}%`,
-                            top: `${particle.y}%`,
-                            animationDuration: `${particle.duration}s`,
-                            animationDelay: `${particle.delay}s`
-                        }}
-                    />
-                ))}
+  useEffect(() => {
+    if (!mountRef.current) return;
 
-                {/* Large floating shapes */}
-                <div 
-                    className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full animate-pulse animate-float" 
-                    style={{ animationDuration: '8s' }}
-                ></div>
-                <div 
-                    className="absolute top-1/4 right-10 w-24 h-24 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-full animate-float-reverse" 
-                    style={{ animationDuration: '10s' }}
-                ></div>
-                <div 
-                    className="absolute bottom-1/4 left-1/4 w-40 h-40 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-full animate-pulse animate-float" 
-                    style={{ animationDuration: '12s' }}
-                ></div>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, 400 / 300, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 
-                {/* Mesh gradient overlay */}
-                <div className="absolute inset-0 opacity-30" style={{
-                    background: `
-                        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-                        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%)
-                    `
-                }}></div>
-            </div>
+    renderer.setSize(400, 300);
+    renderer.setClearColor(0x000000, 0);
+    renderer.domElement.style.pointerEvents = 'none';
+    mountRef.current.appendChild(renderer.domElement);
 
-            {/* CSS Keyframes */}
-            <style jsx>{`
-                @keyframes float {
-                    0%, 100% { 
-                        transform: translateY(0px) rotate(0deg); 
-                    }
-                    50% { 
-                        transform: translateY(-20px) rotate(180deg); 
-                    }
-                }
+    // Create floating crystals
+    const crystals: THREE.Mesh[] = [];
+    for (let i = 0; i < 20; i++) {
+      const geometry = new THREE.OctahedronGeometry(0.1);
+      const material = new THREE.MeshBasicMaterial({
+        color: Math.random() * 0xffffff,
+        transparent: true,
+        opacity: 0.8
+      });
+      const crystal = new THREE.Mesh(geometry, material);
+      crystal.position.set(
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10
+      );
+      scene.add(crystal);
+      crystals.push(crystal);
+    }
 
-                @keyframes float-reverse {
-                    0%, 100% { 
-                        transform: translateY(0px) rotate(0deg); 
-                    }
-                    50% { 
-                        transform: translateY(20px) rotate(-180deg); 
-                    }
-                }
+    camera.position.z = 5;
 
-                .animate-float {
-                    animation: float 6s ease-in-out infinite;
-                }
+    const animate = () => {
+      frameRef.current = requestAnimationFrame(animate);
 
-                .animate-float-reverse {
-                    animation: float-reverse 10s ease-in-out infinite;
-                }
-            `}</style>
-        </>
-    );
+      crystals.forEach((crystal, index) => {
+        crystal.rotation.x += 0.01;
+        crystal.rotation.y += 0.01;
+        crystal.position.y += Math.sin(Date.now() * 0.001 + index) * 0.01;
+      });
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+    sceneRef.current = scene;
+    rendererRef.current = renderer;
+
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+      if (mountRef.current && renderer.domElement) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
+      renderer.dispose();
+    };
+  }, [gameState]);
+
+  return <div className="absolute inset-0 pointer-events-none" ref={mountRef} />;
 };
-
-export default AnimatedBackground;
