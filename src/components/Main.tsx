@@ -12,6 +12,9 @@ const FarquestGame: React.FC = () => {
     playerStats,
     isGameOver,
     isBonus,
+    levelCompleted,
+    currentDifficulty,
+    questionInLevel,
     connectWallet,
     disconnectWallet,
     startGame,
@@ -39,9 +42,12 @@ const FarquestGame: React.FC = () => {
           gameState={gameState}
           playerStats={playerStats}
           currentQuestion={currentQuestion}
+          currentDifficulty={currentDifficulty}
+          questionInLevel={questionInLevel}
           wallet={wallet}
           isBonus={isBonus}
           isGameOver={isGameOver}
+          levelCompleted={levelCompleted}
           totalNumberOfQuestions={totalNumberOfQuestions}
           onStartGame={startGame}
           onAnswerSelect={handleAnswer}

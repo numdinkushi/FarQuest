@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { QUESTIONS } from '~/constants';
-import { GameState, PlayerStats, WalletState } from '~/types';
+import { GameState, PlayerStats, WalletState, Difficulty } from '~/types';
+
+const DIFFICULTY_ORDER: Difficulty[] = [
+    'Starter', 'Novice', 'Explorer', 'Adventurer', 'Legend',
+    'Conqueror', 'Star', 'Galaxy', 'Cosmic', 'Oracle',
+    'Sage', 'Visionary', 'Luminary', 'Titan', 'Farquest Master'
+];
+
+const QUESTIONS_PER_LEVEL = 12;
 
 export const useGameLogic = () => {
     const [wallet, setWallet] = useState<WalletState>({
@@ -25,12 +33,32 @@ export const useGameLogic = () => {
         crystalsCollected: 0
     });
 
-    const totalNumberOfQuestions = QUESTIONS.length;
-
     // Track consecutive correct answers for bonus system
     const [consecutiveCorrect, setConsecutiveCorrect] = useState<number>(0);
     const [isBonus, setIsBonus] = useState<boolean>(false);
     const [isGameOver, setIsGameOver] = useState<boolean>(false);
+    const [levelCompleted, setLevelCompleted] = useState<boolean>(false);
+
+    // Get current difficulty level based on questions answered
+    const getCurrentDifficultyLevel = (): Difficulty => {
+        const levelIndex = Math.floor(gameState.currentQuestion / QUESTIONS_PER_LEVEL);
+        return DIFFICULTY_ORDER[Math.min(levelIndex, DIFFICULTY_ORDER.length - 1)];
+    };
+
+    // Get questions for current difficulty level
+    const getCurrentLevelQuestions = () => {
+        const currentDifficulty = getCurrentDifficultyLevel();
+        return QUESTIONS.filter(q => q.difficulty === currentDifficulty).slice(0, QUESTIONS_PER_LEVEL);
+    };
+
+    // Get current question within the level
+    const getCurrentQuestionInLevel = () => {
+        const levelQuestions = getCurrentLevelQuestions();
+        const questionIndexInLevel = gameState.currentQuestion % QUESTIONS_PER_LEVEL;
+        return levelQuestions[questionIndexInLevel] || levelQuestions[0];
+    };
+
+    const totalNumberOfQuestions = DIFFICULTY_ORDER.length * QUESTIONS_PER_LEVEL;
 
     useEffect(() => {
         let interval: NodeJS.Timeout | null = null;
@@ -86,6 +114,7 @@ export const useGameLogic = () => {
         setConsecutiveCorrect(0);
         setIsBonus(false);
         setIsGameOver(false);
+        setLevelCompleted(false);
     };
 
     const handleAnswer = (answerIndex: number): void => {
@@ -96,8 +125,8 @@ export const useGameLogic = () => {
             isTimerActive: false
         }));
 
-        const question = QUESTIONS[gameState.currentQuestion];
-        const isCorrect = answerIndex === question.correct;
+        const currentQuestion = getCurrentQuestionInLevel();
+        const isCorrect = answerIndex === currentQuestion.correct;
         let bonusAwarded = false;
 
         if (isCorrect) {
@@ -112,7 +141,7 @@ export const useGameLogic = () => {
 
             setGameState(prev => ({ ...prev, score: prev.score + 1 }));
             setPlayerStats(prev => {
-                const newExp = prev.experience + question.reward.exp;
+                const newExp = prev.experience + currentQuestion.reward.exp;
                 const healthBonus = bonusAwarded ? Math.ceil(prev.health * 0.05) : 0; // 5% health bonus
                 const newHealth = Math.min(100, prev.health + healthBonus); // Cap at 100
 
@@ -120,8 +149,8 @@ export const useGameLogic = () => {
                     ...prev,
                     health: newHealth,
                     experience: newExp,
-                    crystalsCollected: prev.crystalsCollected + question.reward.crystals,
-                    level: newExp >= prev.level * 100 ? prev.level + 1 : prev.level
+                    crystalsCollected: prev.crystalsCollected + currentQuestion.reward.crystals,
+                    level: Math.floor(gameState.currentQuestion / QUESTIONS_PER_LEVEL) + 1
                 };
             });
         } else {
@@ -145,17 +174,37 @@ export const useGameLogic = () => {
                 return;
             }
 
-            if (gameState.currentQuestion < QUESTIONS.length - 1) {
+            // Check if level is completed (12 questions of current difficulty)
+            const nextQuestion = gameState.currentQuestion + 1;
+            const isLevelComplete = nextQuestion % QUESTIONS_PER_LEVEL === 0;
+
+            if (isLevelComplete && nextQuestion < totalNumberOfQuestions) {
+                setLevelCompleted(true);
+                // Level completed, but more levels available
+                setTimeout(() => {
+                    setLevelCompleted(false);
+                    setGameState(prev => ({
+                        ...prev,
+                        currentQuestion: nextQuestion,
+                        selectedAnswer: null,
+                        showFeedback: false,
+                        timeLeft: 30,
+                        isTimerActive: true
+                    }));
+                }, 3000); // Show level completion for 3 seconds
+            } else if (nextQuestion < totalNumberOfQuestions) {
+                // Continue to next question
                 setGameState(prev => ({
                     ...prev,
-                    currentQuestion: prev.currentQuestion + 1,
+                    currentQuestion: nextQuestion,
                     selectedAnswer: null,
                     showFeedback: false,
                     timeLeft: 30,
                     isTimerActive: true
                 }));
             } else {
-                setIsGameOver(false); // Successfully completed all questions
+                // All questions completed
+                setIsGameOver(false);
                 setGameState(prev => ({ ...prev, state: 'complete', isTimerActive: false }));
             }
         }, 2000);
@@ -178,17 +227,37 @@ export const useGameLogic = () => {
                 return;
             }
 
-            if (gameState.currentQuestion < QUESTIONS.length - 1) {
+            // Check if level is completed (12 questions of current difficulty)
+            const nextQuestion = gameState.currentQuestion + 1;
+            const isLevelComplete = nextQuestion % QUESTIONS_PER_LEVEL === 0;
+
+            if (isLevelComplete && nextQuestion < totalNumberOfQuestions) {
+                setLevelCompleted(true);
+                // Level completed, but more levels available
+                setTimeout(() => {
+                    setLevelCompleted(false);
+                    setGameState(prev => ({
+                        ...prev,
+                        currentQuestion: nextQuestion,
+                        selectedAnswer: null,
+                        showFeedback: false,
+                        timeLeft: 30,
+                        isTimerActive: true
+                    }));
+                }, 3000); // Show level completion for 3 seconds
+            } else if (nextQuestion < totalNumberOfQuestions) {
+                // Continue to next question
                 setGameState(prev => ({
                     ...prev,
-                    currentQuestion: prev.currentQuestion + 1,
+                    currentQuestion: nextQuestion,
                     selectedAnswer: null,
                     showFeedback: false,
                     timeLeft: 30,
                     isTimerActive: true
                 }));
             } else {
-                setIsGameOver(false); // Successfully completed all questions
+                // All questions completed
+                setIsGameOver(false);
                 setGameState(prev => ({ ...prev, state: 'complete' }));
             }
         }, 2000);
@@ -215,6 +284,7 @@ export const useGameLogic = () => {
         setConsecutiveCorrect(0);
         setIsBonus(false);
         setIsGameOver(false);
+        setLevelCompleted(false);
     };
 
     return {
@@ -224,13 +294,16 @@ export const useGameLogic = () => {
         consecutiveCorrect,
         isBonus,
         isGameOver,
+        levelCompleted,
         connectWallet,
         disconnectWallet,
         startGame,
         handleAnswer,
         claimRewards,
         resetGame,
-        currentQuestion: QUESTIONS[gameState.currentQuestion],
-        totalNumberOfQuestions
+        currentQuestion: getCurrentQuestionInLevel(),
+        totalNumberOfQuestions,
+        currentDifficulty: getCurrentDifficultyLevel(),
+        questionInLevel: (gameState.currentQuestion % QUESTIONS_PER_LEVEL) + 1
     };
 };
