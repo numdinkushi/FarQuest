@@ -55,7 +55,7 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className=" bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+                        className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center  p-4 z-50"
                         onClick={() => setShowInstructions(false)}
                     >
                         <motion.div
@@ -63,7 +63,7 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
                             animate={{ scale: 1, opacity: 1, rotateX: 0 }}
                             exit={{ scale: 0.8, opacity: 0, rotateX: 15 }}
                             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                            className="bg-gradient-to-br from-purple-900/95 to-indigo-900/95 backdrop-blur-lg rounded-2xl px-4 py-4 max-w-sm w-full h-full max-h-[90dvh] flex flex-col border border-purple-400/30 shadow-2xl overflow-hidden"
+                            className="bg-gradient-to-br from-purple-900/95 to-indigo-900/95 backdrop-blur-lg rounded-2xl px-4 py-4 max-w-sm w-full h-full  flex flex-col border border-purple-400/30 shadow-2xl overflow-hidden"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="text-center mb-4 flex-shrink-0">
