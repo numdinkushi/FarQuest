@@ -93,21 +93,21 @@ async function generateFarcasterMetadata(domain, fid, accountAddress, seedPhrase
 
 async function loadEnvLocal() {
   try {
-    if (fs.existsSync('.env.local')) {
+    if (fs.existsSync('.env')) {
       const { loadLocal } = await inquirer.prompt([
         {
           type: 'confirm',
           name: 'loadLocal',
-          message: 'Found .env.local - would you like to load its values in addition to .env values? (except for SEED_PHRASE, values will be written to .env)',
+          message: 'Found .env - would you like to load its values in addition to .env values? (except for SEED_PHRASE, values will be written to .env)',
           default: true
         }
       ]);
 
       if (loadLocal) {
-        console.log('Loading values from .env.local...');
-        const localEnv = dotenv.parse(fs.readFileSync('.env.local'));
+        console.log('Loading values from .env...');
+        const localEnv = dotenv.parse(fs.readFileSync('.env'));
         
-        // Define allowed variables to load from .env.local
+        // Define allowed variables to load from .env
         const allowedVars = [
           'SEED_PHRASE',
           'NEXT_PUBLIC_FRAME_NAME',
@@ -134,12 +134,12 @@ async function loadEnvLocal() {
         
         // Write updated content to .env
         fs.writeFileSync('.env', newEnvContent);
-        console.log('✅ Values from .env.local have been written to .env');
+        console.log('✅ Values from .env have been written to .env');
       }
     }
   } catch (error) {
-    // Error reading .env.local, which is fine
-    console.log('Note: No .env.local file found');
+    // Error reading .env, which is fine
+    console.log('Note: No .env file found');
   }
 }
 
@@ -147,7 +147,7 @@ async function checkRequiredEnvVars() {
   console.log('\n📝 Checking environment variables...');
   console.log('Loading values from .env...');
   
-  // Load .env.local if user wants to
+  // Load .env if user wants to
   await loadEnvLocal();
 
   const requiredVars = [
@@ -214,15 +214,15 @@ async function checkRequiredEnvVars() {
         {
           type: 'confirm',
           name: 'storeSeedPhrase',
-          message: 'Would you like to store this seed phrase in .env.local for future use?',
+          message: 'Would you like to store this seed phrase in .env for future use?',
           default: false
         }
       ]);
 
       if (storeSeedPhrase) {
-        // Write to .env.local
-        fs.appendFileSync('.env.local', `\nSEED_PHRASE="${seedPhrase}"`);
-        console.log('✅ Seed phrase stored in .env.local');
+        // Write to .env
+        fs.appendFileSync('.env', `\nSEED_PHRASE="${seedPhrase}"`);
+        console.log('✅ Seed phrase stored in .env');
       } else {
         console.log('ℹ️  Seed phrase will only be used for this deployment');
       }
