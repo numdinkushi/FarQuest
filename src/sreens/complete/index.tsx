@@ -28,7 +28,7 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
                 exit={{ opacity: 0, scale: 1.1 }}
                 className="text-center space-y-6"
             >
-                <div className="space-y-4">
+                <div className="space-y-10  py-4">
                     <div className="text-6xl">💀</div>
                     <h2 className="text-2xl font-bold text-red-400">Game Over!</h2>
                     <p className="text-red-300">The dragon has defeated you...</p>
@@ -55,7 +55,7 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
                 <div className="space-y-3">
                     <motion.button
                         onClick={onResetGame}
-                        className="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl text-white font-bold text-lg hover:from-red-700 hover:to-orange-700 transition-all duration-300 shadow-lg"
+                        className="w-full py-3 bg-gradient-to-r from-red-600 to-blue-600 rounded-xl text-white font-semibold hover:from-red-700 hover:to-orange-700 transition-all duration-300 shadow-lg"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                     >

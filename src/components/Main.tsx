@@ -1,9 +1,10 @@
 import React from 'react';
 import { WalletConnection } from './app/wallet-connection';
 import { GameHeader } from './app/header/header';
-import { useGameLogic } from '~/hooks/use-game-logic';
+// import { useGameLogic } from '~/hooks/use-game-logic';
 import { GameContent } from './app/content/content';
 import { GameFooter } from './app/footer/footer';
+import { useGameLogic } from '~/hooks/use-game';
 
 const FarquestGame: React.FC = () => {
   const {

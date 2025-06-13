@@ -9,6 +9,8 @@ interface FeedbackProps {
     levelCompleted: boolean;
     currentDifficulty: Difficulty;
     reward: Question['reward'];
+    isError?: boolean;
+    errorMessage?: string;
 }
 
 // Simple confetti effect using CSS animations
@@ -55,10 +57,14 @@ export const Feedback: React.FC<FeedbackProps> = ({
     isBonus,
     levelCompleted,
     currentDifficulty,
-    reward
+    reward,
+    isError = false,
+    errorMessage = ''
 }) => {
     const getFeedbackStyle = () => {
-        if (levelCompleted) {
+        if (isError) {
+            return 'bg-gradient-to-r from-red-900/30 to-orange-900/30 border-red-600/60 text-red-300';
+        } else if (levelCompleted) {
             return 'bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-yellow-600/20 border-purple-500/50 text-purple-300';
         } else if (isCorrect) {
             return isBonus
@@ -72,7 +78,13 @@ export const Feedback: React.FC<FeedbackProps> = ({
     };
 
     const getFeedbackContent = () => {
-        if (levelCompleted) {
+        if (isError) {
+            return {
+                emoji: '⚠️',
+                title: 'Something went wrong!',
+                subtitle: errorMessage || 'An unexpected error occurred. Please try again.'
+            };
+        } else if (levelCompleted) {
             return {
                 emoji: '🎊',
                 title: `${currentDifficulty} Level Complete!`,
@@ -117,7 +129,7 @@ export const Feedback: React.FC<FeedbackProps> = ({
                 <div className="text-2xl mb-2">{content.emoji}</div>
                 <p className="font-bold">{content.title}</p>
                 <p className="text-sm mt-1">{content.subtitle}</p>
-                {isBonus && !levelCompleted && (
+                {isBonus && !levelCompleted && !isError && (
                     <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
@@ -126,13 +138,22 @@ export const Feedback: React.FC<FeedbackProps> = ({
                         ✨ Consecutive Bonus!
                     </motion.div>
                 )}
-                {levelCompleted && (
+                {levelCompleted && !isError && (
                     <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         className="mt-2 text-xs bg-purple-500/20 text-purple-300 px-3 py-2 rounded-full inline-block"
                     >
                         🚀 Level Up! Get ready for {currentDifficulty}+
+                    </motion.div>
+                )}
+                {isError && (
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="mt-2 text-xs bg-red-500/20 text-red-300 px-3 py-2 rounded-full inline-block"
+                    >
+                        🔄 Try Again
                     </motion.div>
                 )}
             </div>

@@ -45,19 +45,19 @@ async function lookupFidByCustodyAddress(custodyAddress, apiKey) {
 
 async function loadEnvLocal() {
   try {
-    if (fs.existsSync('.env.local')) {
+    if (fs.existsSync('.env')) {
       const { loadLocal } = await inquirer.prompt([
         {
           type: 'confirm',
           name: 'loadLocal',
-          message: 'Found .env.local, likely created by the install script - would you like to load its values?',
+          message: 'Found .env, likely created by the install script - would you like to load its values?',
           default: false
         }
       ]);
 
       if (loadLocal) {
-        console.log('Loading values from .env.local...');
-        const localEnv = dotenv.parse(fs.readFileSync('.env.local'));
+        console.log('Loading values from .env...');
+        const localEnv = dotenv.parse(fs.readFileSync('.env'));
         
         // Copy all values except SEED_PHRASE to .env
         const envContent = fs.existsSync('.env') ? fs.readFileSync('.env', 'utf8') + '\n' : '';
@@ -76,20 +76,20 @@ async function loadEnvLocal() {
         
         // Write updated content to .env
         fs.writeFileSync('.env', newEnvContent);
-        console.log('✅ Values from .env.local have been written to .env');
+        console.log('✅ Values from .env have been written to .env');
       }
     }
 
-    // Always try to load SEED_PHRASE from .env.local
-    if (fs.existsSync('.env.local')) {
-      const localEnv = dotenv.parse(fs.readFileSync('.env.local'));
+    // Always try to load SEED_PHRASE from .env
+    if (fs.existsSync('.env')) {
+      const localEnv = dotenv.parse(fs.readFileSync('.env'));
       if (localEnv.SEED_PHRASE) {
         process.env.SEED_PHRASE = localEnv.SEED_PHRASE;
       }
     }
   } catch (error) {
-    // Error reading .env.local, which is fine
-    console.log('Note: No .env.local file found');
+    // Error reading .env, which is fine
+    console.log('Note: No .env file found');
   }
 }
 
@@ -185,7 +185,7 @@ async function main() {
     console.log('\n📝 Checking environment variables...');
     console.log('Loading values from .env...');
     
-    // Load .env.local if user wants to
+    // Load .env if user wants to
     await loadEnvLocal();
 
     // Get domain from user
