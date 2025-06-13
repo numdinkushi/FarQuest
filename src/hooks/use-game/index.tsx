@@ -6,7 +6,6 @@ import { useConvexGame } from '../use-convex-game';
 import { useGameMechanics } from './use-game-mechanics';
 import { useQuestionManager } from './use-question';
 import { useUserManagement } from './use-user';
-import { toast } from 'react-toastify';
 
 export const useGameLogic = () => {
     // Initialize all sub-hooks
@@ -26,11 +25,11 @@ export const useGameLogic = () => {
         endGame,
         claimRewards: claimConvexRewards,
     } = useConvexGame(wallet.wallet.address);
-    // } = useConvexGame('kushiadsrwaseq');
 
-    // Sync local state with Convex user data
+    // Sync local state with Convex user data (only once when user is loaded)
     useEffect(() => {
-        if (userManagement.user) {
+        if (userManagement.user && gameStateHook.gameState.state === 'menu') {
+            // Only sync if we're not currently playing to avoid overriding mid-game state
             gameStateHook.setGameState(prev => ({
                 ...prev,
                 currentQuestion: userManagement.user.currentQuestion,
@@ -44,7 +43,7 @@ export const useGameLogic = () => {
             });
             mechanicsHook.setConsecutiveCorrect(userManagement.user.consecutiveCorrect);
         }
-    }, [userManagement.user]);
+    }, [userManagement.user?.address]); // Only trigger when user changes, not on every update
 
     // Handle timer reaching zero
     useEffect(() => {
@@ -58,13 +57,14 @@ export const useGameLogic = () => {
         if (playerStatsHook.playerStats.health <= 0 && gameStateHook.gameState.state === 'playing') {
             mechanicsHook.setGameOverState(true);
             gameStateHook.completeGame();
-            endGame('health_depleted');
+            endGame('health_depleted').catch(console.error);
         }
     }, [playerStatsHook.playerStats.health, gameStateHook.gameState.state]);
 
     // Enhanced startGame with better validation
     const startGame = async (): Promise<void> => {
         // await userManagement.createUserWithUsername('Player1', true);
+
         if (!wallet.wallet.isConnected) {
             throw new Error('Wallet must be connected before starting game');
         }
@@ -74,14 +74,17 @@ export const useGameLogic = () => {
         }
 
         try {
-            // Start Convex game session
-            const abc =  await startConvexGame();
-            console.log('Game session started successfully', abc);
+            // Start Convex game session first
+            const sessionResult = await startConvexGame();
+            console.log('Game session started successfully', sessionResult);
+
+            // Reset all local state
             gameStateHook.startGameState();
             playerStatsHook.resetStats();
             mechanicsHook.resetMechanics();
+
         } catch (error) {
-            console.log('Failed to start game:', error);
+            console.error('Failed to start game:', error);
             throw new Error('Failed to start game session');
         }
     };
@@ -91,76 +94,72 @@ export const useGameLogic = () => {
             return; // Prevent multiple answers
         }
 
+        // Set answer and show feedback immediately
         gameStateHook.setAnswer(answerIndex);
 
         const currentQuestion = questionManager.getCurrentQuestionInLevel(gameStateHook.gameState.currentQuestion);
         const isCorrect = answerIndex === currentQuestion.correct;
         let bonusAwarded = false;
 
+        // Process answer logic locally first for immediate UI feedback
+        if (isCorrect) {
+            const newConsecutive = mechanicsHook.incrementConsecutive();
+
+            // Check for consecutive bonus (every 10 correct answers)
+            if (newConsecutive % 10 === 0) {
+                bonusAwarded = true;
+                mechanicsHook.setBonusState(true);
+            }
+
+            // Update local state immediately
+            gameStateHook.incrementScore();
+            playerStatsHook.addExperience(currentQuestion.reward.exp);
+            playerStatsHook.addCrystals(currentQuestion.reward.crystals);
+
+            if (bonusAwarded) {
+                const healthBonus = mechanicsHook.calculateHealthBonus(playerStatsHook.playerStats.health);
+                playerStatsHook.healPlayer(healthBonus);
+            }
+
+            const newLevel = questionManager.getCurrentLevel(gameStateHook.gameState.currentQuestion);
+            playerStatsHook.updateLevel(newLevel);
+        } else {
+            // Reset consecutive count on wrong answer
+            mechanicsHook.resetConsecutive();
+            playerStatsHook.takeDamage(20);
+        }
+
+        // Update Convex in background (don't block UI)
         try {
-            // Update question statistics in Convex
             await answerQuestion(isCorrect);
 
-            if (isCorrect) {
-                const newConsecutive = mechanicsHook.incrementConsecutive();
+            // Get current stats for Convex update
+            const currentStats = playerStatsHook.playerStats;
+            const currentGameState = gameStateHook.gameState;
 
-                // Check for consecutive bonus (every 10 correct answers)
-                if (newConsecutive % 10 === 0) {
-                    bonusAwarded = true;
-                }
-
-                gameStateHook.incrementScore();
-                playerStatsHook.addExperience(currentQuestion.reward.exp);
-                playerStatsHook.addCrystals(currentQuestion.reward.crystals);
-
-                if (bonusAwarded) {
-                    const healthBonus = mechanicsHook.calculateHealthBonus(playerStatsHook.playerStats.health);
-                    playerStatsHook.healPlayer(healthBonus);
-                }
-
-                const newLevel = questionManager.getCurrentLevel(gameStateHook.gameState.currentQuestion);
-                playerStatsHook.updateLevel(newLevel);
-
-                // Update progress in Convex
-                await updateProgress({
-                    currentQuestion: gameStateHook.gameState.currentQuestion,
-                    questionInLevel: questionManager.getQuestionInLevel(gameStateHook.gameState.currentQuestion),
-                    currentDifficulty: questionManager.getCurrentDifficultyLevel(gameStateHook.gameState.currentQuestion),
-                    health: playerStatsHook.playerStats.health,
-                    level: newLevel,
-                    experience: playerStatsHook.playerStats.experience,
-                    crystalsCollected: playerStatsHook.playerStats.crystalsCollected,
-                    consecutiveCorrect: newConsecutive,
-                    score: gameStateHook.gameState.score
-                });
-            } else {
-                // Reset consecutive count on wrong answer
-                mechanicsHook.resetConsecutive();
-                playerStatsHook.takeDamage(20);
-
-                // Update progress in Convex
-                await updateProgress({
-                    currentQuestion: gameStateHook.gameState.currentQuestion,
-                    questionInLevel: questionManager.getQuestionInLevel(gameStateHook.gameState.currentQuestion),
-                    currentDifficulty: questionManager.getCurrentDifficultyLevel(gameStateHook.gameState.currentQuestion),
-                    health: playerStatsHook.playerStats.health,
-                    level: playerStatsHook.playerStats.level,
-                    experience: playerStatsHook.playerStats.experience,
-                    crystalsCollected: playerStatsHook.playerStats.crystalsCollected,
-                    consecutiveCorrect: 0,
-                    score: gameStateHook.gameState.score
-                });
-            }
+            await updateProgress({
+                currentQuestion: currentGameState.currentQuestion,
+                questionInLevel: questionManager.getQuestionInLevel(currentGameState.currentQuestion),
+                currentDifficulty: questionManager.getCurrentDifficultyLevel(currentGameState.currentQuestion),
+                health: isCorrect ? currentStats.health : Math.max(0, currentStats.health - 20),
+                level: isCorrect ? questionManager.getCurrentLevel(currentGameState.currentQuestion) : currentStats.level,
+                experience: isCorrect ? currentStats.experience + currentQuestion.reward.exp : currentStats.experience,
+                crystalsCollected: isCorrect ? currentStats.crystalsCollected + currentQuestion.reward.crystals : currentStats.crystalsCollected,
+                consecutiveCorrect: isCorrect ? mechanicsHook.consecutiveCorrect : 0,
+                score: isCorrect ? currentGameState.score + 1 : currentGameState.score
+            });
         } catch (error) {
-            console.error('Failed to process answer:', error);
+            console.error('Failed to process answer in Convex:', error);
             // Continue with local state even if Convex fails
         }
 
+        // Handle post-answer logic after delay
         setTimeout(async () => {
             mechanicsHook.setBonusState(false); // Reset bonus flag after showing feedback
 
             // Check if health is 0 or below before continuing
-            if (playerStatsHook.playerStats.health <= 0) {
+            const currentHealth = playerStatsHook.playerStats.health;
+            if (currentHealth <= 0) {
                 mechanicsHook.setGameOverState(true);
                 gameStateHook.completeGame();
                 try {
@@ -183,34 +182,36 @@ export const useGameLogic = () => {
         gameStateHook.showFeedback();
         gameStateHook.stopTimer();
 
-        // Reset consecutive count on time up
+        // Process time up locally first
         mechanicsHook.resetConsecutive();
+        playerStatsHook.takeDamage(20);
 
+        // Update Convex in background
         try {
-            // Update question statistics in Convex (time up counts as wrong answer)
             await answerQuestion(false);
-            playerStatsHook.takeDamage(20);
 
-            // Update progress in Convex
+            const currentStats = playerStatsHook.playerStats;
+            const currentGameState = gameStateHook.gameState;
+
             await updateProgress({
-                currentQuestion: gameStateHook.gameState.currentQuestion,
-                questionInLevel: questionManager.getQuestionInLevel(gameStateHook.gameState.currentQuestion),
-                currentDifficulty: questionManager.getCurrentDifficultyLevel(gameStateHook.gameState.currentQuestion),
-                health: playerStatsHook.playerStats.health,
-                level: playerStatsHook.playerStats.level,
-                experience: playerStatsHook.playerStats.experience,
-                crystalsCollected: playerStatsHook.playerStats.crystalsCollected,
+                currentQuestion: currentGameState.currentQuestion,
+                questionInLevel: questionManager.getQuestionInLevel(currentGameState.currentQuestion),
+                currentDifficulty: questionManager.getCurrentDifficultyLevel(currentGameState.currentQuestion),
+                health: Math.max(0, currentStats.health - 20),
+                level: currentStats.level,
+                experience: currentStats.experience,
+                crystalsCollected: currentStats.crystalsCollected,
                 consecutiveCorrect: 0,
-                score: gameStateHook.gameState.score
+                score: currentGameState.score
             });
         } catch (error) {
-            console.error('Failed to process time up:', error);
-            playerStatsHook.takeDamage(20);
+            console.error('Failed to process time up in Convex:', error);
         }
 
         setTimeout(async () => {
             // Check if health is 0 or below before continuing
-            if (playerStatsHook.playerStats.health <= 0) {
+            const currentHealth = playerStatsHook.playerStats.health;
+            if (currentHealth <= 0) {
                 mechanicsHook.setGameOverState(true);
                 gameStateHook.completeGame();
                 try {
@@ -226,17 +227,18 @@ export const useGameLogic = () => {
     };
 
     const handleQuestionTransition = async (): Promise<void> => {
-        // const nextQuestion = gameStateHook.gameState.currentQuestion + 1;
-        const isLevelComplete = questionManager.isLevelComplete(gameStateHook.gameState.currentQuestion);
-        const isAllComplete = questionManager.isAllQuestionsComplete(gameStateHook.gameState.currentQuestion);
+        const currentQuestionNum = gameStateHook.gameState.currentQuestion;
+        const isLevelComplete = questionManager.isLevelComplete(currentQuestionNum);
+        const isAllComplete = questionManager.isAllQuestionsComplete(currentQuestionNum);
 
         if (isLevelComplete && !isAllComplete) {
             try {
                 // Mark level as completed in Convex
-                await completeLevel(questionManager.getCurrentDifficultyLevel(gameStateHook.gameState.currentQuestion));
+                await completeLevel(questionManager.getCurrentDifficultyLevel(currentQuestionNum));
             } catch (error) {
                 console.error('Failed to complete level:', error);
             }
+
             mechanicsHook.setLevelCompletedState(true);
 
             // Level completed, but more levels available
@@ -265,7 +267,7 @@ export const useGameLogic = () => {
         try {
             const rewards = await claimConvexRewards();
             setTimeout(() => {
-                alert(`🎉 Rewards claimed!\n💎 ${rewards?.crystals || 0} Crystals\n⭐ ${rewards?.experience || 0} XP\n🏆 Level ${rewards?.level || 1} NFT minted!`);
+                alert(`🎉 Rewards claimed!\n💎 ${rewards?.crystals || playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${rewards?.experience || playerStatsHook.playerStats.experience} XP\n🏆 Level ${rewards?.level || playerStatsHook.playerStats.level} NFT minted!`);
                 resetGame();
             }, 2000);
         } catch (error) {
