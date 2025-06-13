@@ -18,6 +18,7 @@ export const useUserManagement = (walletAddress: string) => {
 
     // Enhanced user creation with better error handling
     const createUserWithUsername = async (username: string, isOG?: boolean): Promise<void> => {
+        console.log('Creating user with username:', username, 'isOG:', isOG);
         if (!walletAddress) {
             throw new Error('Wallet not connected');
         }

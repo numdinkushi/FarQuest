@@ -64,6 +64,7 @@ export const useGameLogic = () => {
 
     // Enhanced startGame with better validation
     const startGame = async (): Promise<void> => {
+        // await userManagement.createUserWithUsername('Player1', true);
         if (!wallet.wallet.isConnected) {
             throw new Error('Wallet must be connected before starting game');
         }

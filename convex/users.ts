@@ -9,14 +9,28 @@ export const createUser = mutation({
         isOG: v.optional(v.boolean()),
     },
     handler: async (ctx, args) => {
+        console.log("Creating user with args:", args);
+        
         // Check if user already exists
         const existingUser = await ctx.db
             .query("users")
-            .filter((q) => q.eq(q.field("address"), args.address))
+            .withIndex("by_address", (q) => q.eq("address", args.address))
             .first();
 
         if (existingUser) {
+            console.log("User already exists:", existingUser._id);
             throw new Error("User already exists with this address");
+        }
+
+        // Check if username is taken
+        const existingUsername = await ctx.db
+            .query("users")
+            .withIndex("by_username", (q) => q.eq("username", args.username))
+            .first();
+
+        if (existingUsername) {
+            console.log("Username already taken:", args.username);
+            throw new Error("Username is already taken");
         }
 
         // Create new user with default game state
@@ -52,6 +66,7 @@ export const createUser = mutation({
             totalRewardsClaimed: 0,
         });
 
+        console.log("User created successfully with ID:", userId);
         return userId;
     },
 });
@@ -71,6 +86,14 @@ export const updateGameProgress = mutation({
         score: v.number(),
     },
     handler: async (ctx, args) => {
+        console.log("Updating game progress for user:", args.userId);
+        
+        const user = await ctx.db.get(args.userId);
+        if (!user) {
+            console.error("User not found:", args.userId);
+            throw new Error("User not found");
+        }
+
         await ctx.db.patch(args.userId, {
             currentQuestion: args.currentQuestion,
             questionInLevel: args.questionInLevel,
@@ -83,6 +106,8 @@ export const updateGameProgress = mutation({
             score: args.score,
             lastPlayedAt: Date.now(),
         });
+
+        console.log("Game progress updated successfully");
     },
 });
 
@@ -93,8 +118,13 @@ export const updateQuestionStats = mutation({
         isCorrect: v.boolean(),
     },
     handler: async (ctx, args) => {
+        console.log("Updating question stats for user:", args.userId, "isCorrect:", args.isCorrect);
+        
         const user = await ctx.db.get(args.userId);
-        if (!user) throw new Error("User not found");
+        if (!user) {
+            console.error("User not found:", args.userId);
+            throw new Error("User not found");
+        }
 
         await ctx.db.patch(args.userId, {
             totalQuestionsAnswered: user.totalQuestionsAnswered + 1,
@@ -106,6 +136,8 @@ export const updateQuestionStats = mutation({
                 : user.totalWrongAnswers,
             lastPlayedAt: Date.now(),
         });
+
+        console.log("Question stats updated successfully");
     },
 });
 
@@ -116,8 +148,13 @@ export const completeDifficultyLevel = mutation({
         difficulty: v.string(),
     },
     handler: async (ctx, args) => {
+        console.log("Completing difficulty level for user:", args.userId, "difficulty:", args.difficulty);
+        
         const user = await ctx.db.get(args.userId);
-        if (!user) throw new Error("User not found");
+        if (!user) {
+            console.error("User not found:", args.userId);
+            throw new Error("User not found");
+        }
 
         const levelsCompleted = user.levelsCompleted || [];
         if (!levelsCompleted.includes(args.difficulty)) {
@@ -129,6 +166,8 @@ export const completeDifficultyLevel = mutation({
             highestDifficultyReached: args.difficulty,
             lastPlayedAt: Date.now(),
         });
+
+        console.log("Difficulty level completed successfully");
     },
 });
 
@@ -138,8 +177,18 @@ export const startGameSession = mutation({
         userId: v.id("users"),
     },
     handler: async (ctx, args) => {
+        console.log("Starting game session for user:", args.userId);
+        
         const user = await ctx.db.get(args.userId);
-        if (!user) throw new Error("User not found");
+        if (!user) {
+            console.error("User not found:", args.userId);
+            throw new Error("User not found");
+        }
+
+        // Get current stats before resetting
+        const currentTotalQuestionsAnswered = user.totalQuestionsAnswered;
+        const currentTotalCorrectAnswers = user.totalCorrectAnswers;
+        const currentTotalWrongAnswers = user.totalWrongAnswers;
 
         // Reset user's game state for new session
         await ctx.db.patch(args.userId, {
@@ -171,6 +220,7 @@ export const startGameSession = mutation({
             endReason: "in_progress",
         });
 
+        console.log("Game session started successfully with ID:", sessionId);
         return sessionId;
     },
 });
@@ -183,24 +233,39 @@ export const endGameSession = mutation({
         endReason: v.string(),
     },
     handler: async (ctx, args) => {
+        console.log("Ending game session:", args.sessionId, "for user:", args.userId);
+        
         const user = await ctx.db.get(args.userId);
-        if (!user) throw new Error("User not found");
+        if (!user) {
+            console.error("User not found:", args.userId);
+            throw new Error("User not found");
+        }
 
         const session = await ctx.db.get(args.sessionId);
-        if (!session) throw new Error("Session not found");
+        if (!session) {
+            console.error("Session not found:", args.sessionId);
+            throw new Error("Session not found");
+        }
+
+        // Calculate session-specific stats
+        const sessionQuestionsAnswered = user.totalQuestionsAnswered - (session.questionsAnswered || 0);
+        const sessionCorrectAnswers = user.totalCorrectAnswers - (session.correctAnswers || 0);
+        const sessionWrongAnswers = user.totalWrongAnswers - (session.wrongAnswers || 0);
 
         await ctx.db.patch(args.sessionId, {
             endTime: Date.now(),
             finalScore: user.score,
-            questionsAnswered: user.totalQuestionsAnswered - (session.questionsAnswered || 0),
-            correctAnswers: user.totalCorrectAnswers - (session.correctAnswers || 0),
-            wrongAnswers: user.totalWrongAnswers - (session.wrongAnswers || 0),
+            questionsAnswered: sessionQuestionsAnswered,
+            correctAnswers: sessionCorrectAnswers,
+            wrongAnswers: sessionWrongAnswers,
             highestDifficultyReached: user.currentDifficulty,
             crystalsEarned: user.crystalsCollected,
             experienceEarned: user.experience,
             completedSuccessfully: args.endReason === "completed",
             endReason: args.endReason,
         });
+
+        console.log("Game session ended successfully");
     },
 });
 
@@ -210,18 +275,45 @@ export const claimRewards = mutation({
         userId: v.id("users"),
     },
     handler: async (ctx, args) => {
+        console.log("Claiming rewards for user:", args.userId);
+        
         const user = await ctx.db.get(args.userId);
-        if (!user) throw new Error("User not found");
+        if (!user) {
+            console.error("User not found:", args.userId);
+            throw new Error("User not found");
+        }
 
         await ctx.db.patch(args.userId, {
             totalRewardsClaimed: user.totalRewardsClaimed + 1,
             lastPlayedAt: Date.now(),
         });
 
-        return {
+        const rewards = {
             crystals: user.crystalsCollected,
             experience: user.experience,
             level: user.level,
         };
+
+        console.log("Rewards claimed successfully:", rewards);
+        return rewards;
+    },
+});
+
+// Check if username is available (MUTATION not query)
+export const checkUsernameAvailability = mutation({
+    args: {
+        username: v.string(),
+    },
+    handler: async (ctx, args) => {
+        console.log("Checking username availability:", args.username);
+        
+        const existingUser = await ctx.db
+            .query("users")
+            .withIndex("by_username", (q) => q.eq("username", args.username))
+            .first();
+
+        const isAvailable = !existingUser;
+        console.log("Username availability result:", isAvailable);
+        return isAvailable;
     },
 });

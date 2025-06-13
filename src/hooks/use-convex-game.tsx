@@ -9,7 +9,6 @@ export const useConvexGame = (walletAddress?: string) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-
     // Queries
     const user = useQuery(api.queries.getUserByAddress,
         walletAddress ? { address: walletAddress } : "skip"
@@ -27,9 +26,11 @@ export const useConvexGame = (walletAddress?: string) => {
     const startGameSession = useMutation(api.users.startGameSession);
     const endGameSession = useMutation(api.users.endGameSession);
     const claimRewards = useMutation(api.users.claimRewards);
+    const checkUsernameAvailability = useMutation(api.users.checkUsernameAvailability);
 
     // Create user when wallet connects
     const handleCreateUser = useCallback(async (username: string, address: string, isOG?: boolean) => {
+        console.log('Creating user with:', { username, address, isOG });
         setIsLoading(true);
         setError(null);
         try {
@@ -37,7 +38,7 @@ export const useConvexGame = (walletAddress?: string) => {
             console.log('User created with ID:', userId);
             return userId;
         } catch (err) {
-            console.log('Error creating user:', err);
+            console.error('Error creating user:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to create user';
             setError(errorMessage);
             throw new Error(errorMessage);
@@ -48,18 +49,24 @@ export const useConvexGame = (walletAddress?: string) => {
 
     // Start new game session
     const handleStartGame = useCallback(async () => {
+        console.log('Starting game, user:', user);
         if (!user) {
-            setError('User not found');
-            return null;
+            const errorMsg = 'User must be created before starting game';
+            console.error(errorMsg);
+            setError(errorMsg);
+            throw new Error(errorMsg);
         }
 
         setIsLoading(true);
         setError(null);
         try {
+            console.log('Starting game session for user ID:', user._id);
             const sessionId = await startGameSession({ userId: user._id });
+            console.log('Game session started with ID:', sessionId);
             setCurrentSessionId(sessionId);
             return sessionId;
         } catch (err) {
+            console.error('Error starting game:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to start game';
             setError(errorMessage);
             throw new Error(errorMessage);
@@ -80,14 +87,20 @@ export const useConvexGame = (walletAddress?: string) => {
         consecutiveCorrect: number;
         score: number;
     }) => {
-        if (!user) return;
+        if (!user) {
+            console.warn('Cannot update progress: user not found');
+            return;
+        }
 
         try {
+            console.log('Updating progress for user:', user._id, progressData);
             await updateGameProgress({
                 userId: user._id,
                 ...progressData
             });
+            console.log('Progress updated successfully');
         } catch (err) {
+            console.error('Error updating progress:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to update progress';
             setError(errorMessage);
         }
@@ -95,14 +108,20 @@ export const useConvexGame = (walletAddress?: string) => {
 
     // Update question statistics
     const handleQuestionAnswer = useCallback(async (isCorrect: boolean) => {
-        if (!user) return;
+        if (!user) {
+            console.warn('Cannot update question stats: user not found');
+            return;
+        }
 
         try {
+            console.log('Updating question stats for user:', user._id, 'isCorrect:', isCorrect);
             await updateQuestionStats({
                 userId: user._id,
                 isCorrect
             });
+            console.log('Question stats updated successfully');
         } catch (err) {
+            console.error('Error updating question stats:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to update question stats';
             setError(errorMessage);
         }
@@ -110,14 +129,20 @@ export const useConvexGame = (walletAddress?: string) => {
 
     // Complete difficulty level
     const handleCompleteLevel = useCallback(async (difficulty: string) => {
-        if (!user) return;
+        if (!user) {
+            console.warn('Cannot complete level: user not found');
+            return;
+        }
 
         try {
+            console.log('Completing level for user:', user._id, 'difficulty:', difficulty);
             await completeDifficultyLevel({
                 userId: user._id,
                 difficulty
             });
+            console.log('Level completed successfully');
         } catch (err) {
+            console.error('Error completing level:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to complete level';
             setError(errorMessage);
         }
@@ -125,16 +150,22 @@ export const useConvexGame = (walletAddress?: string) => {
 
     // End game session
     const handleEndGame = useCallback(async (endReason: string) => {
-        if (!user || !currentSessionId) return;
+        if (!user || !currentSessionId) {
+            console.warn('Cannot end game: user or session not found', { user: !!user, session: !!currentSessionId });
+            return;
+        }
 
         try {
+            console.log('Ending game session:', currentSessionId, 'for user:', user._id, 'reason:', endReason);
             await endGameSession({
                 sessionId: currentSessionId,
                 userId: user._id,
                 endReason
             });
+            console.log('Game session ended successfully');
             setCurrentSessionId(null);
         } catch (err) {
+            console.error('Error ending game:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to end game';
             setError(errorMessage);
         }
@@ -142,14 +173,20 @@ export const useConvexGame = (walletAddress?: string) => {
 
     // Claim rewards
     const handleClaimRewards = useCallback(async () => {
-        if (!user) return null;
+        if (!user) {
+            console.warn('Cannot claim rewards: user not found');
+            return null;
+        }
 
         setIsLoading(true);
         setError(null);
         try {
+            console.log('Claiming rewards for user:', user._id);
             const rewards = await claimRewards({ userId: user._id });
+            console.log('Rewards claimed successfully:', rewards);
             return rewards;
         } catch (err) {
+            console.error('Error claiming rewards:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to claim rewards';
             setError(errorMessage);
             throw new Error(errorMessage);
@@ -201,9 +238,11 @@ export const useConvexGame = (walletAddress?: string) => {
 // Hook for username validation
 export const useUsernameValidation = () => {
     const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-    const checkUsername = useMutation(api.queries.isUsernameAvailable);
+    const checkUsernameAvailability = useMutation(api.users.checkUsernameAvailability);
 
     const validateUsername = useCallback(async (username: string) => {
+        console.log('Validating username:', username);
+        
         if (!username || username.length < 3) {
             return { isValid: false, message: 'Username must be at least 3 characters long' };
         }
@@ -218,18 +257,19 @@ export const useUsernameValidation = () => {
 
         setIsCheckingUsername(true);
         try {
-            const isAvailable = await checkUsername({ username });
+            const isAvailable = await checkUsernameAvailability({ username });
+            console.log('Username availability result:', isAvailable);
             if (!isAvailable) {
                 return { isValid: false, message: 'Username is already taken' };
             }
             return { isValid: true, message: 'Username is available' };
         } catch (err) {
-            console.log('Error checking username availability:', err);
+            console.error('Error checking username availability:', err);
             return { isValid: false, message: 'Error checking username availability' };
         } finally {
             setIsCheckingUsername(false);
         }
-    }, [checkUsername]);
+    }, [checkUsernameAvailability]);
 
     return {
         validateUsername,
