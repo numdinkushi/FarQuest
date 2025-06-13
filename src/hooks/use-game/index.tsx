@@ -6,6 +6,7 @@ import { useConvexGame } from '../use-convex-game';
 import { useGameMechanics } from './use-game-mechanics';
 import { useQuestionManager } from './use-question';
 import { useUserManagement } from './use-user';
+import { toast } from 'react-toastify';
 
 export const useGameLogic = () => {
     // Initialize all sub-hooks
@@ -24,7 +25,8 @@ export const useGameLogic = () => {
         completeLevel,
         endGame,
         claimRewards: claimConvexRewards,
-    } = useConvexGame(wallet.wallet.address);
+    // } = useConvexGame(wallet.wallet.address);
+    } = useConvexGame('kushiadsrwaseq');
 
     // Sync local state with Convex user data
     useEffect(() => {
@@ -62,24 +64,23 @@ export const useGameLogic = () => {
 
     // Enhanced startGame with better validation
     const startGame = async (): Promise<void> => {
-        // Validate prerequisites
-        if (!wallet.wallet.isConnected) {
-            throw new Error('Wallet must be connected before starting game');
-        }
+        // if (!wallet.wallet.isConnected) {
+        //     throw new Error('Wallet must be connected before starting game');
+        // }
 
-        if (!userManagement.isUserCreated) {
-            throw new Error('User must be created before starting game');
-        }
+        // if (!userManagement.isUserCreated) {
+        //     throw new Error('User must be created before starting game');
+        // }
 
         try {
             // Start Convex game session
-            await startConvexGame();
-
+            const abc =  await startConvexGame();
+            console.log('Game session started successfully', abc);
             gameStateHook.startGameState();
             playerStatsHook.resetStats();
             mechanicsHook.resetMechanics();
         } catch (error) {
-            console.error('Failed to start game:', error);
+            console.log('Failed to start game:', error);
             throw new Error('Failed to start game session');
         }
     };

@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { getSession } from "~/auth"
 import "~/app/globals.css";
 import { Providers } from "~/app/providers";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 export const metadata: Metadata = {
   title: process.env.NEXT_PUBLIC_FRAME_NAME || "Frames v2 Demo",
@@ -20,6 +22,7 @@ export default async function RootLayout({
     <html lang="en">
       <body>
         <Providers session={session}>{children}</Providers>
+        <ToastContainer />
       </body>
     </html>
   );

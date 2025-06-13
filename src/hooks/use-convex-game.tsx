@@ -2,13 +2,13 @@ import { useState, useCallback } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
-// import { api } from '../convex/_generated/api';
-// import { Id } from '../convex/_generated/dataModel';
 
 export const useConvexGame = (walletAddress?: string) => {
+    console.log('useConvexGame hook initialized with walletAddress:', walletAddress);
     const [currentSessionId, setCurrentSessionId] = useState<Id<"gameSessions"> | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
 
     // Queries
     const user = useQuery(api.queries.getUserByAddress,
@@ -34,8 +34,10 @@ export const useConvexGame = (walletAddress?: string) => {
         setError(null);
         try {
             const userId = await createUser({ username, address, isOG });
+            console.log('User created with ID:', userId);
             return userId;
         } catch (err) {
+            console.log('Error creating user:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to create user';
             setError(errorMessage);
             throw new Error(errorMessage);
