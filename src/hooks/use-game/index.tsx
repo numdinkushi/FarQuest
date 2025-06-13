@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useWallet } from './use-wallet';
 import { useGameState } from './use-game-state';
 import { usePlayerStats } from './use-player-stats';
@@ -26,24 +26,70 @@ export const useGameLogic = () => {
         claimRewards: claimConvexRewards,
     } = useConvexGame(wallet.wallet.address);
 
-    // Sync local state with Convex user data (only once when user is loaded)
+    // Save current game state to Convex
+    const saveGameState = useCallback(async (): Promise<void> => {
+        if (!userManagement.user || gameStateHook.gameState.state !== 'playing') {
+            return; // Nothing to save if not playing or no user
+        }
+
+        try {
+            console.log('Saving game state before wallet disconnect...');
+
+            const currentStats = playerStatsHook.playerStats;
+            const currentGameState = gameStateHook.gameState;
+
+            await updateProgress({
+                currentQuestion: currentGameState.currentQuestion,
+                questionInLevel: questionManager.getQuestionInLevel(currentGameState.currentQuestion),
+                currentDifficulty: questionManager.getCurrentDifficultyLevel(currentGameState.currentQuestion),
+                health: currentStats.health,
+                level: currentStats.level,
+                experience: currentStats.experience,
+                crystalsCollected: currentStats.crystalsCollected,
+                consecutiveCorrect: mechanicsHook.consecutiveCorrect,
+                score: currentGameState.score
+            });
+
+            console.log('Game state saved successfully');
+        } catch (error) {
+            console.error('Failed to save game state:', error);
+            // Don't throw - allow disconnect to continue even if save fails
+        }
+    }, [
+        userManagement.user,
+        gameStateHook.gameState,
+        playerStatsHook.playerStats,
+        mechanicsHook.consecutiveCorrect,
+        questionManager,
+        updateProgress
+    ]);
+
+    // Sync local state with Convex user data when user loads or reconnects
     useEffect(() => {
-        if (userManagement.user && gameStateHook.gameState.state === 'menu') {
-            // Only sync if we're not currently playing to avoid overriding mid-game state
+        if (userManagement.user && wallet.wallet.isConnected) {
+            console.log('Syncing local state with Convex user data...');
+
+            // Restore game state from Convex user data
             gameStateHook.setGameState(prev => ({
                 ...prev,
                 currentQuestion: userManagement.user.currentQuestion,
-                score: userManagement.user.score
+                score: userManagement.user.score,
+                // If user was mid-game when they disconnected, restore to playing state
+                state: userManagement.user.currentQuestion > 0 && userManagement.user.health > 0 ? 'playing' : prev.state
             }));
+
             playerStatsHook.setPlayerStats({
                 health: userManagement.user.health,
                 level: userManagement.user.level,
                 experience: userManagement.user.experience,
                 crystalsCollected: userManagement.user.crystalsCollected
             });
+
             mechanicsHook.setConsecutiveCorrect(userManagement.user.consecutiveCorrect);
+
+            console.log('State synced - User was at question:', userManagement.user.currentQuestion);
         }
-    }, [userManagement.user?.address]); // Only trigger when user changes, not on every update
+    }, [userManagement.user?.address, wallet.wallet.isConnected]); // Trigger when user changes or wallet connects
 
     // Handle timer reaching zero
     useEffect(() => {
@@ -63,8 +109,6 @@ export const useGameLogic = () => {
 
     // Enhanced startGame with better validation
     const startGame = async (): Promise<void> => {
-        // await userManagement.createUserWithUsername('Player1', true);
-
         if (!wallet.wallet.isConnected) {
             throw new Error('Wallet must be connected before starting game');
         }
@@ -74,11 +118,23 @@ export const useGameLogic = () => {
         }
 
         try {
-            // Start Convex game session first
-            const sessionResult = await startConvexGame();
-            console.log('Game session started successfully', sessionResult);
+            // Check if user has an existing game in progress
+            const hasGameInProgress = userManagement.user &&
+                userManagement.user.currentQuestion > 0 &&
+                userManagement.user.health > 0;
 
-            // Reset all local state
+            if (hasGameInProgress) {
+                // Resume existing game - state is already synced from useEffect above
+                console.log('Resuming game from question:', userManagement.user.currentQuestion);
+                gameStateHook.setGameState(prev => ({ ...prev, state: 'playing' }));
+                return;
+            }
+
+            // Start new game session
+            const sessionResult = await startConvexGame();
+            console.log('New game session started successfully', sessionResult);
+
+            // Reset all local state for new game
             gameStateHook.startGameState();
             playerStatsHook.resetStats();
             mechanicsHook.resetMechanics();
@@ -286,11 +342,14 @@ export const useGameLogic = () => {
         userManagement.clearUserError();
     };
 
-    const handleWalletDisconnect = (): void => {
-        wallet.disconnectWallet();
-        resetGame();
+    // Enhanced wallet disconnect that saves state first
+    const handleWalletDisconnect = async (): Promise<void> => {
+        await wallet.disconnectWallet(saveGameState);
+        // Set the game state to 'menu' after disconnecting the wallet
+        gameStateHook.setGameState(prev => ({ ...prev, state: 'menu' }));
+        userManagement.clearUserError();
     };
-
+    
     return {
         // Wallet
         wallet: wallet.wallet,

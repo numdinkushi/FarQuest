@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { WalletState } from '~/types';
 
 export const useWallet = () => {
@@ -40,9 +40,20 @@ export const useWallet = () => {
         }
     };
 
-    const disconnectWallet = (): void => {
-        setWallet({ isConnected: false, address: '' });
-    };
+    // Enhanced disconnect that accepts optional callback for saving state
+    const disconnectWallet = useCallback(async (onBeforeDisconnect?: () => Promise<void>): Promise<void> => {
+        try {
+            // Execute any pre-disconnect logic (like saving game state)
+            if (onBeforeDisconnect) {
+                await onBeforeDisconnect();
+            }
+        } catch (error) {
+            console.error('Error during pre-disconnect logic:', error);
+            // Continue with disconnect even if save fails
+        } finally {
+            setWallet({ isConnected: false, address: '' });
+        }
+    }, []);
 
     return {
         wallet,
