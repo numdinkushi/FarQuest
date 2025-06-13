@@ -109,6 +109,8 @@ export const useGameLogic = () => {
 
     // Enhanced startGame with better validation
     const startGame = async (): Promise<void> => {
+        // await userManagement.createUserWithUsername('Player 1', true); // Ensure user is created
+        
         if (!wallet.wallet.isConnected) {
             throw new Error('Wallet must be connected before starting game');
         }
@@ -349,7 +351,7 @@ export const useGameLogic = () => {
         gameStateHook.setGameState(prev => ({ ...prev, state: 'menu' }));
         userManagement.clearUserError();
     };
-    
+
     return {
         // Wallet
         wallet: wallet.wallet,
