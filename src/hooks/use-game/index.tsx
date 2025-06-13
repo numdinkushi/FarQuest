@@ -25,8 +25,8 @@ export const useGameLogic = () => {
         completeLevel,
         endGame,
         claimRewards: claimConvexRewards,
-    // } = useConvexGame(wallet.wallet.address);
-    } = useConvexGame('kushiadsrwaseq');
+    } = useConvexGame(wallet.wallet.address);
+    // } = useConvexGame('kushiadsrwaseq');
 
     // Sync local state with Convex user data
     useEffect(() => {
@@ -64,13 +64,13 @@ export const useGameLogic = () => {
 
     // Enhanced startGame with better validation
     const startGame = async (): Promise<void> => {
-        // if (!wallet.wallet.isConnected) {
-        //     throw new Error('Wallet must be connected before starting game');
-        // }
+        if (!wallet.wallet.isConnected) {
+            throw new Error('Wallet must be connected before starting game');
+        }
 
-        // if (!userManagement.isUserCreated) {
-        //     throw new Error('User must be created before starting game');
-        // }
+        if (!userManagement.isUserCreated) {
+            throw new Error('User must be created before starting game');
+        }
 
         try {
             // Start Convex game session
