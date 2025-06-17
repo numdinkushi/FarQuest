@@ -22,9 +22,11 @@ const FarquestGame: React.FC = () => {
     handleAnswer,
     claimRewards,
     resetGame,
+    isConnectPending,
     currentQuestion,
     totalNumberOfQuestions
   } = useGameLogic();
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
@@ -36,6 +38,7 @@ const FarquestGame: React.FC = () => {
             wallet={wallet}
             onConnect={connectWallet}
             onDisconnect={disconnectWallet}
+            isConnectPending={isConnectPending}
           />
         </div>
 
