@@ -1,6 +1,6 @@
-  export const FARQUEST_CONTRACT_ADDRESS="0x80695F4477eF8480A3084D027983E14Eb7e86476"
-  
-export const FARQUEST_ABI=[[
+export const FARQUEST_CONTRACT_ADDRESS="0x80695F4477eF8480A3084D027983E14Eb7e86476"
+
+export const FARQUEST_ABI=[
     {
       "inputs": [
         {
@@ -236,4 +236,4 @@ export const FARQUEST_ABI=[[
       "stateMutability": "payable",
       "type": "receive"
     }
-  ]]
+  ]
