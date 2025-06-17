@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
+import Register from '~/components/Register';
 
 interface MenuScreenProps {
     isWalletConnected: boolean;
@@ -66,9 +67,11 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
                                 <span className="text-2xl">🚀</span>
                                 Begin Quest
                             </span>
+                            
                         </motion.button>
                     )}
                 </div>
+                <Register />
             </motion.div>
 
             <AnimatePresence>
