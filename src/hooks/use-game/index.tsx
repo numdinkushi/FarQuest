@@ -355,6 +355,7 @@ export const useGameLogic = () => {
     return {
         // Wallet
         wallet: wallet.wallet,
+        isConnectPending: wallet.isConnectPending,
         connectWallet: wallet.connectWallet,
         disconnectWallet: handleWalletDisconnect,
 

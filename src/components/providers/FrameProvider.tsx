@@ -1,29 +1,62 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import sdk, { type Context, type FrameNotificationDetails, AddFrame } from "@farcaster/frame-sdk";
+import sdk, {
+  type Context,
+  type FrameNotificationDetails,
+  AddFrame,
+} from "@farcaster/frame-sdk";
 import { createStore } from "mipd";
 import React from "react";
 
 interface FrameContextType {
   isSDKLoaded: boolean;
   context: Context.FrameContext | undefined;
+  openUrl: (url: string) => Promise<void>;
+  close: () => Promise<void>;
+  added: boolean;
+  notificationDetails: FrameNotificationDetails | null;
+  lastEvent: string;
+  addFrame: () => Promise<void>;
+  addFrameResult: string;
 }
 
-const FrameContext = React.createContext<FrameContextType | undefined>(undefined);
+const FrameContext = React.createContext<FrameContextType | undefined>(
+  undefined,
+);
 
 export function useFrame() {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.FrameContext>();
   const [added, setAdded] = useState(false);
-  const [notificationDetails, setNotificationDetails] = useState<FrameNotificationDetails | null>(null);
+  const [notificationDetails, setNotificationDetails] =
+    useState<FrameNotificationDetails | null>(null);
   const [lastEvent, setLastEvent] = useState("");
   const [addFrameResult, setAddFrameResult] = useState("");
+
+  // SDK actions only work in mini app clients, so this pattern supports browser actions as well
+  const openUrl = useCallback(
+    async (url: string) => {
+      if (context) {
+        await sdk.actions.openUrl(url);
+      } else {
+        window.open(url, "_blank");
+      }
+    },
+    [context],
+  );
+
+  const close = useCallback(async () => {
+    if (context) {
+      await sdk.actions.close();
+    } else {
+      window.close();
+    }
+  }, [context]);
 
   const addFrame = useCallback(async () => {
     try {
       setNotificationDetails(null);
-
       const result = await sdk.actions.addFrame();
 
       if (result.notificationDetails) {
@@ -32,18 +65,17 @@ export function useFrame() {
       setAddFrameResult(
         result.notificationDetails
           ? `Added, got notificaton token ${result.notificationDetails.token} and url ${result.notificationDetails.url}`
-          : "Added, got no notification details"
+          : "Added, got no notification details",
       );
     } catch (error) {
-      if (error instanceof AddFrame.RejectedByUser) {
+      if (
+        error instanceof AddFrame.RejectedByUser ||
+        error instanceof AddFrame.InvalidDomainManifest
+      ) {
         setAddFrameResult(`Not added: ${error.message}`);
+      } else {
+        setAddFrameResult(`Error: ${error}`);
       }
-
-      if (error instanceof AddFrame.InvalidDomainManifest) {
-        setAddFrameResult(`Not added: ${error.message}`);
-      }
-
-      setAddFrameResult(`Error: ${error}`);
     }
   }, []);
 
@@ -111,19 +143,29 @@ export function useFrame() {
     }
   }, [isSDKLoaded]);
 
-  return { isSDKLoaded, context, added, notificationDetails, lastEvent, addFrame, addFrameResult };
+  return {
+    isSDKLoaded,
+    context,
+    added,
+    notificationDetails,
+    lastEvent,
+    addFrame,
+    addFrameResult,
+    openUrl,
+    close,
+  };
 }
 
 export function FrameProvider({ children }: { children: React.ReactNode }) {
-  const { isSDKLoaded, context } = useFrame();
+  const frameContext = useFrame();
 
-  if (!isSDKLoaded) {
+  if (!frameContext.isSDKLoaded) {
     return <div>Loading...</div>;
   }
 
   return (
-    <FrameContext.Provider value={{ isSDKLoaded, context }}>
+    <FrameContext.Provider value={frameContext}>
       {children}
     </FrameContext.Provider>
   );
-} 
+}
