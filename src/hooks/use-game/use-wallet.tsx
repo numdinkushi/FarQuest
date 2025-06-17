@@ -140,7 +140,7 @@ export const useWallet = () => {
         }
     };
 };
-// import { useState, useCallback } from 'react';
+
 // import { useAccount, useDisconnect } from 'wagmi';
 // import { WalletState } from '~/types';
 
