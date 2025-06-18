@@ -9,7 +9,7 @@ import { useUserManagement } from './use-user';
 
 export const useGameLogic = () => {
     // Initialize all sub-hooks
-    const wallet = useWallet();
+    const wallet = useWallet(); 
     const gameStateHook = useGameState();
     const playerStatsHook = usePlayerStats();
     const mechanicsHook = useGameMechanics();
