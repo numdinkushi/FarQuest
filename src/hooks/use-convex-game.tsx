@@ -26,7 +26,6 @@ export const useConvexGame = (walletAddress?: string) => {
     const startGameSession = useMutation(api.users.startGameSession);
     const endGameSession = useMutation(api.users.endGameSession);
     const claimRewards = useMutation(api.users.claimRewards);
-    const checkUsernameAvailability = useMutation(api.users.checkUsernameAvailability);
 
     // Create user when wallet connects
     const handleCreateUser = useCallback(async (username: string, address: string, isOG?: boolean) => {

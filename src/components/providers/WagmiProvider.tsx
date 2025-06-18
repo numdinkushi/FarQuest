@@ -143,7 +143,7 @@ function CoinbaseWalletAutoConnect({
 
 // Debug component to log wallet state
 function WalletDebugger() {
-  const { connect, connectors, isPending, error } = useConnect();
+  const {  connectors, isPending, error } = useConnect();
   const { isConnected, address } = useAccount();
   
   useEffect(() => {

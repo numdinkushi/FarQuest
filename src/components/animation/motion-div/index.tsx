@@ -1,17 +1,19 @@
 // components/MotionDiv.tsx
 import React, { useState, useEffect } from 'react';
-import { MotionDivProps } from '~/types';
+
+interface MotionDivProps {
+    children: React.ReactNode;
+    className?: string;
+    style?: React.CSSProperties;
+    animate?: 'fadeInUp' | 'slideInLeft' | 'scaleIn' | 'bounceIn';
+    [key: string]: unknown; // This allows for any additional props
+}
 
 const MotionDiv: React.FC<MotionDivProps> = ({
     children,
     className = '',
     style,
     animate,
-    initial,
-    transition,
-    whileHover,
-    whileTap,
-    layout,
     ...props
 }) => {
     const [isVisible, setIsVisible] = useState<boolean>(false);

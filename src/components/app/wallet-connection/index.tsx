@@ -2,18 +2,17 @@
 import React from 'react';
 import { WalletState } from "~/types";
 import { motion } from 'framer-motion';
-import { useConnect, useConnectors } from 'wagmi';
+import { Connector, useConnect, useConnectors } from 'wagmi';
 
 interface WalletConnectionProps {
     wallet: WalletState;
-    onConnect: (connector?: any) => void;
+    onConnect: (connector?: Connector) => void;
     onDisconnect: () => void;
     isConnectPending?: boolean;
 }
 
-const WalletOptions: React.FC<{ onConnect: (connector: any) => void; isConnectPending?: boolean; }> = ({
-    onConnect,
-    isConnectPending
+const WalletOptions: React.FC<{ onConnect: (connector: Connector) => void; isConnectPending?: boolean; }> = ({
+   
 }) => {
     const { connect, isPending, error } = useConnect();
     const connectors = useConnectors();
@@ -22,7 +21,7 @@ const WalletOptions: React.FC<{ onConnect: (connector: any) => void; isConnectPe
     console.log('Connect pending:', isPending);
     console.log('Connect error:', error);
 
-    const handleConnect = async (connector: any) => {
+    const handleConnect = async (connector: Connector) => {
         console.log('Attempting to connect with:', connector.name, connector.id);
 
         try {
