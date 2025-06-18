@@ -93,9 +93,9 @@ const getConnectors = () => {
     connectorList.push(walletConnect({
       projectId: "12ed680dece83c5e9afbcb9ea589bda9",
       metadata: {
-        name: APP_NAME,
+        name: APP_NAME || 'FarQuest',
         description: "Farquest Game",
-        url: APP_URL,
+        url: APP_URL || '',
         icons: [APP_ICON_URL],
       },
     }));
@@ -110,7 +110,7 @@ const getConnectors = () => {
     console.warn('Injected connector failed:', error);
   }
   
-  console.log('Created connectors:', connectorList.map(c => c.id || c.name));
+  // console.log('Created connectors:', connectorList.map(c => c.id || c.name));
   return connectorList;
 };
 
