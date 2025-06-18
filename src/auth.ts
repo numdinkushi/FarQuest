@@ -8,7 +8,7 @@ declare module "next-auth" {
       fid: number;
     };
   }
-}
+} 
 
 function getDomainFromUrl(urlString: string | undefined): string {
   if (!urlString) {
