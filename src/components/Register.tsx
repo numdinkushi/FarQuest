@@ -18,7 +18,7 @@ interface RegisterProps {
   CELO_CHAIN_ID: number;
 }
 
-export default function Register( ) {
+export default function Register() {
   const { address, isConnected, chain } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
   const publicClient = usePublicClient();
@@ -27,7 +27,7 @@ export default function Register( ) {
   const [isRegistering, setIsRegistering] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
 
-   const chainId = useChainId();
+  const chainId = useChainId();
   const CELO_CHAIN_ID = celo.id;
   const targetChain = celo;
   const isCorrectChain = chain?.id === CELO_CHAIN_ID;
@@ -35,7 +35,7 @@ export default function Register( ) {
   // Check if user is already registered
   const checkRegistration = useCallback(async () => {
     if (!address || !publicClient) return;
-    
+
     try {
       const registered: any = await publicClient.readContract({
         address: FARQUEST_CONTRACT_ADDRESS,
@@ -43,7 +43,7 @@ export default function Register( ) {
         functionName: "users",
         args: [address],
       });
-      
+
       setIsRegistered(registered[0]); // First field in User struct is 'registered'
       setIsCheckingRegistration(false);
     } catch (error) {
@@ -76,7 +76,7 @@ export default function Register( ) {
 
       // 2. Get the referral data suffix
       const dataSuffix = getDataSuffix({
-        consumer: "0xC5337CeE97fF5B190F26C4A12341dd210f26e17c", //KUSHI CHANGE TO YOUR DIVI CONSUMER ADDRESS
+        consumer: "0xBdeb0877ea15abd145e12D7c74c04a5A5F924879", //KUSHI CHANGE TO YOUR DIVI CONSUMER ADDRESS
         providers: [
           "0x0423189886d7966f0dd7e7d256898daeee625dca",
           "0xc95876688026be9d6fa7a7c33328bd013effa2bb",
@@ -87,7 +87,7 @@ export default function Register( ) {
       // 3. Properly combine the data
       const combinedData = dataSuffix
         ? registerData +
-          (dataSuffix.startsWith("0x") ? dataSuffix.slice(2) : dataSuffix)
+        (dataSuffix.startsWith("0x") ? dataSuffix.slice(2) : dataSuffix)
         : registerData;
 
       // 4. Send the transaction (0.1 CELO registration fee)
@@ -101,7 +101,7 @@ export default function Register( ) {
       });
 
       setTxHash(hash);
-      
+
       // 5. Wait for transaction receipt
       if (!publicClient) {
         throw new Error("Public client is not available");
@@ -115,7 +115,7 @@ export default function Register( ) {
           `Registration successful! Transaction hash: ${hash.slice(0, 6)}...`,
         );
         setIsRegistered(true);
-        
+
         // 6. Report to Divi in a separate try-catch
         try {
           console.log("Submitting referral to Divi:", {
