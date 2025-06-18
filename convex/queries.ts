@@ -38,7 +38,8 @@ export const getLeaderboard = query({
         
         const leaderboard = await ctx.db
             .query("users")
-            .withIndex("by_score", (q) => q.order("desc"))
+            .withIndex("by_score")
+            .order("desc")
             .take(limit);
         
         console.log("Leaderboard entries found:", leaderboard.length);
@@ -55,7 +56,8 @@ export const getLeaderboardByLevel = query({
         
         const leaderboard = await ctx.db
             .query("users")
-            .withIndex("by_level", (q) => q.order("desc"))
+            .withIndex("by_level")
+            .order("desc")
             .take(limit);
         
         console.log("Level leaderboard entries found:", leaderboard.length);
