@@ -69,25 +69,27 @@ export const useGameLogic = () => {
         if (userManagement.user && wallet.wallet.isConnected) {
             console.log('Syncing local state with Convex user data...');
 
+            const user = userManagement.user; // Get the user once to avoid repeated null checks
+
             // Restore game state from Convex user data
             gameStateHook.setGameState(prev => ({
                 ...prev,
-                currentQuestion: userManagement.user.currentQuestion,
-                score: userManagement.user.score,
+                currentQuestion: user.currentQuestion,
+                score: user.score,
                 // If user was mid-game when they disconnected, restore to playing state
-                state: userManagement.user.currentQuestion > 0 && userManagement.user.health > 0 ? 'playing' : prev.state
+                state: user.currentQuestion > 0 && user.health > 0 ? 'playing' : prev.state
             }));
 
             playerStatsHook.setPlayerStats({
-                health: userManagement.user.health,
-                level: userManagement.user.level,
-                experience: userManagement.user.experience,
-                crystalsCollected: userManagement.user.crystalsCollected
+                health: user.health,
+                level: user.level,
+                experience: user.experience,
+                crystalsCollected: user.crystalsCollected
             });
 
-            mechanicsHook.setConsecutiveCorrect(userManagement.user.consecutiveCorrect);
+            mechanicsHook.setConsecutiveCorrect(user.consecutiveCorrect);
 
-            console.log('State synced - User was at question:', userManagement.user.currentQuestion);
+            console.log('State synced - User was at question:', user.currentQuestion);
         }
     }, [userManagement.user?.address, wallet.wallet.isConnected]); // Trigger when user changes or wallet connects
 
@@ -121,13 +123,14 @@ export const useGameLogic = () => {
 
         try {
             // Check if user has an existing game in progress
-            const hasGameInProgress = userManagement.user &&
-                userManagement.user.currentQuestion > 0 &&
-                userManagement.user.health > 0;
+            const user = userManagement.user;
+            const hasGameInProgress = user &&
+                user.currentQuestion > 0 &&
+                user.health > 0;
 
             if (hasGameInProgress) {
                 // Resume existing game - state is already synced from useEffect above
-                console.log('Resuming game from question:', userManagement.user.currentQuestion);
+                console.log('Resuming game from question:', user.currentQuestion);
                 gameStateHook.setGameState(prev => ({ ...prev, state: 'playing' }));
                 return;
             }
