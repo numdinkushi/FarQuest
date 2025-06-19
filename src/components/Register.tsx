@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Loader2, UserPlus, AlertCircle } from "lucide-react";
+import { Loader2, UserPlus, AlertCircle, Sparkles } from "lucide-react";
 import { Button } from "~/components/ui/Button";
 import { toast } from "sonner";
 import { useAccount, useChainId, usePublicClient, useSendTransaction } from "wagmi";
@@ -12,18 +12,15 @@ import { FARQUEST_ABI, FARQUEST_CONTRACT_ADDRESS } from "~/lib/constant";
 import { celo } from "viem/chains";
 
 interface RegisterProps {
-  isCorrectChain: boolean;
-  FARQUEST_CONTRACT_ADDRESS: `0x${string}`;
-  FARQUEST_ABI: any[];
-  CELO_CHAIN_ID: number;
+  isRegistered: boolean;
+  setIsRegistered: (isRegistered: boolean) => void;
+  onRegistrationSuccess?: () => void; // Optional callback for when registration succeeds
 }
 
-export default function Register() {
+export default function Register({ isRegistered, setIsRegistered, onRegistrationSuccess }: RegisterProps) {
   const { address, isConnected, chain } = useAccount();
   const { sendTransactionAsync } = useSendTransaction();
   const publicClient = usePublicClient();
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [isCheckingRegistration, setIsCheckingRegistration] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
 
@@ -31,27 +28,6 @@ export default function Register() {
   const CELO_CHAIN_ID = celo.id;
   const targetChain = celo;
   const isCorrectChain = chain?.id === CELO_CHAIN_ID;
-
-  // Check if user is already registered
-  const checkRegistration = useCallback(async () => {
-    if (!address || !publicClient) return;
-
-    try {
-      const registered: any = await publicClient.readContract({
-        address: FARQUEST_CONTRACT_ADDRESS,
-        abi: FARQUEST_ABI,
-        functionName: "users",
-        args: [address],
-      });
-
-      setIsRegistered(registered[0]); // First field in User struct is 'registered'
-      setIsCheckingRegistration(false);
-    } catch (error) {
-      console.error("Error checking registration:", error);
-      toast.error("Failed to check registration status");
-      setIsCheckingRegistration(false);
-    }
-  }, [address, publicClient]);
 
   // Handle registration transaction
   const handleRegister = useCallback(async () => {
@@ -116,6 +92,11 @@ export default function Register() {
         );
         setIsRegistered(true);
 
+        // Call the optional success callback
+        if (onRegistrationSuccess) {
+          onRegistrationSuccess();
+        }
+
         // 6. Report to Divi in a separate try-catch
         try {
           console.log("Submitting referral to Divi:", {
@@ -150,78 +131,124 @@ export default function Register() {
     sendTransactionAsync,
     CELO_CHAIN_ID,
     publicClient,
+    setIsRegistered,
+    onRegistrationSuccess,
   ]);
-
-  // Check registration status on mount and when address changes
-  useEffect(() => {
-    checkRegistration();
-  }, [checkRegistration]);
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-5"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="relative overflow-hidden mt-1"
     >
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-        Register for FarQuest
-      </h2>
-      <p className="text-gray-600 dark:text-gray-300">
-        Pay a 0.1 CELO registration fee to join FarQuest and start earning
-        rewards by completing quests!
-      </p>
+      {/* Animated background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 rounded-3xl" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 via-transparent to-pink-500/20 rounded-3xl" />
 
-      {isCheckingRegistration ? (
-        <div className="p-4 text-center bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <Loader2 className="w-5 h-5 animate-spin text-amber-500 mx-auto mb-2" />
-          <p className="text-gray-600 dark:text-gray-300">
-            Checking registration status...
+      {/* Subtle animated orbs */}
+      <div className="absolute top-4 right-6 w-16 h-16 bg-pink-400/20 rounded-full blur-xl animate-pulse" />
+      <div className="absolute bottom-6 left-4 w-20 h-20 bg-purple-400/20 rounded-full blur-xl animate-pulse delay-1000" />
+
+      <div className="relative p-8 space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-3">
+          <motion.div
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl mb-2"
+          >
+            <Sparkles className="w-8 h-8 text-white" />
+          </motion.div>
+
+          <h2 className="text-2xl font-bold text-white">
+            Join FarQuest
+          </h2>
+          <p className="text-purple-100/90 text-sm leading-relaxed max-w-sm mx-auto">
+            Begin your quest journey with a simple 0.1 CELO registration fee and unlock exclusive rewards!
           </p>
         </div>
-      ) : isRegistered ? (
-        <div className="p-4 bg-green-50 dark:bg-green-900/30 rounded-lg text-green-800 dark:text-green-200">
-          <div className="flex items-center justify-center gap-2">
-            <UserPlus className="w-5 h-5" />
-            <span>You are already registered!</span>
-          </div>
-          {txHash && (
-            <a
-              href={`https://celoscan.io/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm underline block mt-2 text-center"
-            >
-              View transaction
-            </a>
-          )}
-        </div>
-      ) : (
-        <>
-          {!isCorrectChain && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/30 rounded-lg text-sm text-red-800 dark:text-red-200 flex items-center">
-              <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span>Please switch to Celo Network to register</span>
-            </div>
-          )}
 
-          <Button
-            onClick={handleRegister}
-            disabled={!address || isRegistering || !isCorrectChain}
-            className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
-            aria-label="Register for FarQuest"
+        {/* Content */}
+        {isRegistered ? (
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="p-6 bg-gradient-to-r from-emerald-500/20 to-green-500/20 backdrop-blur-sm rounded-2xl border border-emerald-400/30"
           >
-            {isRegistering ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <div className="flex items-center justify-center gap-2">
-                <UserPlus className="w-5 h-5" />
-                <span>Register (0.1 CELO)</span>
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="p-2 bg-emerald-400/20 rounded-full">
+                <UserPlus className="w-5 h-5 text-emerald-200" />
               </div>
+              <span className="text-white font-semibold">Successfully Registered!</span>
+            </div>
+            <p className="text-emerald-100/80 text-sm text-center mb-4">
+              Welcome to FarQuest! Your adventure begins now.
+            </p>
+            {txHash && (
+              <motion.a
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                href={`https://celoscan.io/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-full px-4 py-2 bg-white/10 hover:bg-white/20 transition-colors rounded-xl text-sm text-white/90 hover:text-white border border-white/20"
+              >
+                View Transaction →
+              </motion.a>
             )}
-          </Button>
-        </>
-      )}
+          </motion.div>
+        ) : (
+          <div className="space-y-4">
+            {!isCorrectChain && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="p-4 bg-red-500/20 backdrop-blur-sm rounded-xl border border-red-400/30 flex items-start gap-3"
+              >
+                <AlertCircle className="w-5 h-5 text-red-200 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-red-100 text-sm font-medium">Network Required</p>
+                  <p className="text-red-200/80 text-xs mt-1">
+                    Please switch to Celo Network to continue
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Button
+                onClick={handleRegister}
+                disabled={!address || isRegistering || !isCorrectChain}
+                className="w-full py-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white font-semibold rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+                aria-label="Register for FarQuest"
+              >
+                {isRegistering ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Processing...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="p-1.5 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                      <UserPlus className="w-4 h-4" />
+                    </div>
+                    <span>Register Now</span>
+                    <div className="px-2 py-1 bg-pink-400/30 rounded-lg text-xs font-medium">
+                      0.1 CELO
+                    </div>
+                  </div>
+                )}
+              </Button>
+            </motion.div>
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }

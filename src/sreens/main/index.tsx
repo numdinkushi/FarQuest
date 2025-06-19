@@ -1,6 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useAccount, usePublicClient } from 'wagmi';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 import Register from '~/components/Register';
+import { FARQUEST_ABI, FARQUEST_CONTRACT_ADDRESS } from '~/lib/constant';
 
 interface MenuScreenProps {
     isWalletConnected: boolean;
@@ -8,7 +12,64 @@ interface MenuScreenProps {
 }
 
 export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onStartGame }) => {
+    const { address } = useAccount();
+    const publicClient = usePublicClient();
     const [showInstructions, setShowInstructions] = useState(false);
+    const [isRegistered, setIsRegistered] = useState(false);
+    const [isCheckingRegistration, setIsCheckingRegistration] = useState(true);
+
+    // Check if user is already registered
+    const checkRegistration = useCallback(async () => {
+        if (!address || !publicClient || !isWalletConnected) {
+            setIsCheckingRegistration(false);
+            return;
+        }
+
+        try {
+            setIsCheckingRegistration(true);
+
+            const registered = await publicClient.readContract({
+                address: FARQUEST_CONTRACT_ADDRESS,
+                abi: FARQUEST_ABI,
+                functionName: "users",
+                args: [address],
+            });
+
+            // @ts-expect-error viem types may not match exactly
+            setIsRegistered(registered[0]); // First field in User struct is 'registered'
+        } catch (error) {
+            console.error("Error checking registration:", error);
+            toast.error("Failed to check registration status");
+            setIsRegistered(false);
+        } finally {
+            setIsCheckingRegistration(false);
+        }
+    }, [address, publicClient, isWalletConnected]);
+
+    // Check registration status on mount and when address/wallet connection changes
+    useEffect(() => {
+        checkRegistration();
+    }, [checkRegistration]);
+
+    // Show loading state while checking registration
+    if (isWalletConnected && isCheckingRegistration) {
+        return (
+            <motion.div
+                key="checking-registration"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center space-y-6"
+            >
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl">
+                    <Loader2 className="w-8 h-8 animate-spin text-purple-200" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Checking Registration</h2>
+                <p className="text-purple-200">
+                    Verifying your quest status on the blockchain...
+                </p>
+            </motion.div>
+        );
+    }
 
     return (
         <>
@@ -19,59 +80,70 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
                 exit={{ opacity: 0, scale: 1.1 }}
                 className="text-center space-y-8"
             >
-                <div className="space-y-6">
-                    <div className="text-6xl">🏰</div>
-                    <h2 className="text-3xl font-bold text-white">Welcome, Adventurer!</h2>
-                    <p className="text-lg text-purple-200 max-w-md mx-auto">
-                        Embark on an epic quest through the Web3 realm. Answer mystical questions to collect crystals and level up!
-                    </p>
-                </div>
+                {isWalletConnected && isRegistered && (
+                    <>
+                        <div className="space-y-6">
+                            <div className="text-6xl">🏰</div>
+                            <h2 className="text-3xl font-bold text-white">Welcome, Adventurer!</h2>
+                            <p className="text-lg text-purple-200 max-w-md mx-auto">
+                                Embark on an epic quest through the Web3 realm. Answer mystical questions to collect crystals and level up!
+                            </p>
+                        </div>
 
-                <div className="space-y-6 max-w-md mx-auto">
-                    <motion.button
-                        onClick={() => setShowInstructions(true)}
-                        className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600  rounded-xl text-white font-semibold hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg"
-                        whileHover={{
-                            scale: 1.05,
-                            boxShadow: "0 0 40px rgba(168, 85, 247, 0.6)",
-                            y: -2
+                        <div className="space-y-6 max-w-md mx-auto">
+                            <motion.button
+                                onClick={() => setShowInstructions(true)}
+                                className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600  rounded-xl text-white font-semibold hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg"
+                                whileHover={{
+                                    scale: 1.05,
+                                    boxShadow: "0 0 40px rgba(168, 85, 247, 0.6)",
+                                    y: -2
+                                }}
+                                whileTap={{ scale: 0.95 }}
+                                style={{
+                                    background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+                                    boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)',
+                                }}
+                            >
+                                <span className="flex items-center justify-center gap-3">
+                                    <span className="text-2xl">⚡</span>
+                                    Game Instructions
+                                </span>
+                            </motion.button>
+
+                            <motion.button
+                                onClick={onStartGame}
+                                className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600   rounded-xl text-white font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg"
+                                whileHover={{
+                                    scale: 1.05,
+                                    boxShadow: "0 0 40px rgba(34, 197, 94, 0.6)",
+                                    y: -2
+                                }}
+                                whileTap={{ scale: 0.95 }}
+                                style={{
+                                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                                    boxShadow: '0 8px 32px rgba(5, 150, 105, 0.3)',
+                                }}
+                            >
+                                <span className="flex items-center justify-center gap-3">
+                                    <span className="text-2xl">🚀</span>
+                                    Begin Quest
+                                </span>
+                            </motion.button>
+                        </div>
+                    </>
+                )}
+
+                {isWalletConnected && !isRegistered && (
+                    <Register
+                        isRegistered={isRegistered}
+                        setIsRegistered={setIsRegistered}
+                        onRegistrationSuccess={() => {
+                            // Optionally re-check registration after successful registration
+                            checkRegistration();
                         }}
-                        whileTap={{ scale: 0.95 }}
-                        style={{
-                            background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
-                            boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)',
-                        }}
-                    >
-                        <span className="flex items-center justify-center gap-3">
-                            <span className="text-2xl">⚡</span>
-                            Game Instructions
-                        </span>
-                    </motion.button>
-                    
-                    {isWalletConnected && (
-                        <motion.button
-                            onClick={onStartGame}
-                            className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600   rounded-xl text-white font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg"
-                            whileHover={{
-                                scale: 1.05,
-                                boxShadow: "0 0 40px rgba(34, 197, 94, 0.6)",
-                                y: -2
-                            }}
-                            whileTap={{ scale: 0.95 }}
-                            style={{
-                                background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-                                boxShadow: '0 8px 32px rgba(5, 150, 105, 0.3)',
-                            }}
-                        >
-                            <span className="flex items-center justify-center gap-3">
-                                <span className="text-2xl">🚀</span>
-                                Begin Quest
-                            </span>
-                            
-                        </motion.button>
-                    )}
-                </div>
-                <Register />
+                    />
+                )}
             </motion.div>
 
             <AnimatePresence>

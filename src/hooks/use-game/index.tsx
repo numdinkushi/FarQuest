@@ -6,9 +6,10 @@ import { useConvexGame } from '../use-convex-game';
 import { useGameMechanics } from './use-game-mechanics';
 import { useQuestionManager } from './use-question';
 import { useUserManagement } from './use-user';
+import { toast } from 'sonner'; // For error notifications
 
 export const useGameLogic = () => {
-    // Initialize all sub-hooks
+    // Initialize all sub-hooks with enhanced wallet support
     const wallet = useWallet(); 
     const gameStateHook = useGameState();
     const playerStatsHook = usePlayerStats();
@@ -109,12 +110,22 @@ export const useGameLogic = () => {
         }
     }, [playerStatsHook.playerStats.health, gameStateHook.gameState.state]);
 
-    // Enhanced startGame with better validation
+    // Network validation - show toast if not on correct chain
+    useEffect(() => {
+        if (wallet.wallet.isConnected && !wallet.isCorrectChain) {
+            toast.error("Please switch to Celo Network to play the game");
+        }
+    }, [wallet.wallet.isConnected, wallet.isCorrectChain]);
+
+    // Enhanced startGame with network validation
     const startGame = async (): Promise<void> => {
-        // await userManagement.createUserWithUsername('Player 1', true); // Ensure user is created
-        
         if (!wallet.wallet.isConnected) {
             throw new Error('Wallet must be connected before starting game');
+        }
+
+        if (!wallet.isCorrectChain) {
+            toast.error("Please switch to Celo Network first");
+            return;
         }
 
         if (!userManagement.isUserCreated) {
@@ -153,6 +164,11 @@ export const useGameLogic = () => {
     const handleAnswer = async (answerIndex: number): Promise<void> => {
         if (gameStateHook.gameState.selectedAnswer !== null) {
             return; // Prevent multiple answers
+        }
+
+        if (!wallet.isCorrectChain) {
+            toast.error("Please switch to Celo Network to continue");
+            return;
         }
 
         // Set answer and show feedback immediately
@@ -356,7 +372,7 @@ export const useGameLogic = () => {
     };
 
     return {
-        // Wallet
+        // Wallet - Enhanced with new features from useWallet
         wallet: wallet.wallet,
         isConnectPending: wallet.isConnectPending,
         connectWallet: wallet.connectWallet,
@@ -393,6 +409,15 @@ export const useGameLogic = () => {
         currentQuestion: questionManager.getCurrentQuestionInLevel(gameStateHook.gameState.currentQuestion),
         totalNumberOfQuestions: questionManager.totalNumberOfQuestions,
         currentDifficulty: questionManager.getCurrentDifficultyLevel(gameStateHook.gameState.currentQuestion),
-        questionInLevel: questionManager.getQuestionInLevel(gameStateHook.gameState.currentQuestion)
+        questionInLevel: questionManager.getQuestionInLevel(gameStateHook.gameState.currentQuestion),
+
+        // Enhanced wallet features from updated useWallet hook
+        isSDKLoaded: wallet.isSDKLoaded,
+        context: wallet.context,
+        showSwitchNetworkBanner: wallet.showSwitchNetworkBanner,
+        isCorrectChain: wallet.isCorrectChain,
+        switchToTargetChain: wallet.switchToTargetChain,
+        isSwitchChainPending: wallet.isSwitchChainPending,
+        targetChain: wallet.targetChain
     };
 };
