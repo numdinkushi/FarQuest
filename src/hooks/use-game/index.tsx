@@ -6,10 +6,18 @@ import { useConvexGame } from '../use-convex-game';
 import { useGameMechanics } from './use-game-mechanics';
 import { useQuestionManager } from './use-question';
 import { useUserManagement } from './use-user';
+import { toast } from 'sonner'; // For error notifications
+import { CLAIM_SECRET, SCALE_FACTOR } from '~/constants';
+import { FARQUEST_ABI, FARQUEST_CONTRACT_ADDRESS } from '~/lib/constant';
+import { encodeFunctionData, keccak256, parseUnits, toBytes } from 'viem';
+import { usePublicClient, useSendTransaction } from 'wagmi';
 
 export const useGameLogic = () => {
-    // Initialize all sub-hooks
-    const wallet = useWallet(); 
+    const { sendTransactionAsync } = useSendTransaction();
+    const publicClient = usePublicClient();
+
+    // Initialize all sub-hooks with enhanced wallet support
+    const wallet = useWallet();
     const gameStateHook = useGameState();
     const playerStatsHook = usePlayerStats();
     const mechanicsHook = useGameMechanics();
@@ -109,12 +117,22 @@ export const useGameLogic = () => {
         }
     }, [playerStatsHook.playerStats.health, gameStateHook.gameState.state]);
 
-    // Enhanced startGame with better validation
+    // Network validation - show toast if not on correct chain
+    useEffect(() => {
+        if (wallet.wallet.isConnected && !wallet.isCorrectChain) {
+            toast.error("Please switch to Celo Network to play the game");
+        }
+    }, [wallet.wallet.isConnected, wallet.isCorrectChain]);
+
+    // Enhanced startGame with network validation
     const startGame = async (): Promise<void> => {
-        // await userManagement.createUserWithUsername('Player 1', true); // Ensure user is created
-        
         if (!wallet.wallet.isConnected) {
             throw new Error('Wallet must be connected before starting game');
+        }
+
+        if (!wallet.isCorrectChain) {
+            toast.error("Please switch to Celo Network first");
+            return;
         }
 
         if (!userManagement.isUserCreated) {
@@ -153,6 +171,11 @@ export const useGameLogic = () => {
     const handleAnswer = async (answerIndex: number): Promise<void> => {
         if (gameStateHook.gameState.selectedAnswer !== null) {
             return; // Prevent multiple answers
+        }
+
+        if (!wallet.isCorrectChain) {
+            toast.error("Please switch to Celo Network to continue");
+            return;
         }
 
         // Set answer and show feedback immediately
@@ -322,22 +345,108 @@ export const useGameLogic = () => {
         }
     };
 
+    // const claimRewards = async (): Promise<void> => {
+    //     gameStateHook.showRewards();
+    // TODO: KUSH CLEAN UP THIS, REMOVE
+
+    //     try {
+    //         const rewards = await claimConvexRewards();
+    //         console.log('Rewards claimed successfully:', rewards);
+    //         // setTimeout(() => {
+    //         //     alert(`🎉 Rewards claimed!\n💎 ${rewards?.crystals || playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${rewards?.experience || playerStatsHook.playerStats.experience} XP\n🏆 Level ${rewards?.level || playerStatsHook.playerStats.level} NFT minted!`);
+    //         //     resetGame();
+    //         // }, 2000);
+    //     } catch (error) {
+    //         console.error('Failed to claim rewards:', error);
+    //         // Fallback to local data if Convex fails
+    //         setTimeout(() => {
+    //             alert(`🎉 Rewards claimed!\n💎 ${playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${playerStatsHook.playerStats.experience} XP\n🏆 Level ${playerStatsHook.playerStats.level} NFT minted!`);
+    //             resetGame();
+    //         }, 2000);
+    //     }
+    // };
+
     const claimRewards = async (): Promise<void> => {
-        gameStateHook.showRewards();
+        console.log('Claiming rewards...');
 
         try {
             const rewards = await claimConvexRewards();
-            setTimeout(() => {
-                alert(`🎉 Rewards claimed!\n💎 ${rewards?.crystals || playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${rewards?.experience || playerStatsHook.playerStats.experience} XP\n🏆 Level ${rewards?.level || playerStatsHook.playerStats.level} NFT minted!`);
+            console.log('Rewards claimed successfully:', rewards);
+
+            if (rewards) {
+                const crystals = rewards?.crystals;
+                const level = Math.ceil(crystals * SCALE_FACTOR);
+                const secret = keccak256(toBytes(CLAIM_SECRET || ''));
+                console.log('Claiming level:', level, 'with secret:', secret);
+                
+                const claimRewardData = encodeFunctionData({
+                    abi: FARQUEST_ABI,
+                    functionName: "claimReward",
+                    args: [
+                        BigInt(level),
+                        secret
+                    ]
+                });
+
+                gameStateHook.showRewards();
+
+                // First estimate gas for the transaction
+                let gasEstimate;
+                try {
+                    gasEstimate = await publicClient?.estimateGas({
+                        to: FARQUEST_CONTRACT_ADDRESS,
+                        data: claimRewardData as `0x${string}`,
+                        // account: wallet.wallet.address,
+                    });
+                    console.log('Gas estimate:', gasEstimate);
+                } catch (estimateError) {
+                    console.error('Gas estimation failed:', estimateError);
+                    // Use a higher default gas limit if estimation fails
+                    gasEstimate = BigInt(300000);
+                }
+
+                // Add 20% buffer to gas estimate
+                const gasWithBuffer = gasEstimate ? gasEstimate + (gasEstimate * BigInt(20)) / BigInt(100) : BigInt(300000);
+
+                // Send the transaction with proper gas configuration
+                const hash = await sendTransactionAsync({
+                    to: FARQUEST_CONTRACT_ADDRESS,
+                    data: claimRewardData as `0x${string}`,
+                    chainId: 42220, // Use the imported celo chain ID
+                    gas: gasWithBuffer, // Set gas limit
+                    maxFeePerGas: parseUnits("2", 9), // 2 Gwei
+                    maxPriorityFeePerGas: parseUnits("1", 9), // 1 Gwei
+                });
+
+                if (!publicClient || !hash) {
+                    throw new Error('Transaction failed or public client not available');
+                }
+
+                console.log('Transaction hash:', hash);
+
+                const receipt = await publicClient.waitForTransactionReceipt({
+                    hash,
+                });
+
+                console.log('Transaction receipt:', receipt);
+
+                if (receipt.status !== 'success') {
+                    throw new Error('Transaction failed');
+                }
+
                 resetGame();
-            }, 2000);
+                console.log(`Rewards claimed successfully! Level: ${level}`);
+
+                // Show success message
+                toast.success(`🎉 Rewards claimed!\n💎 ${crystals} Crystals\n⭐ ${rewards.experience} XP\n🏆 Level ${level} NFT minted!`);
+            }
         } catch (error) {
             console.error('Failed to claim rewards:', error);
-            // Fallback to local data if Convex fails
-            setTimeout(() => {
-                alert(`🎉 Rewards claimed!\n💎 ${playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${playerStatsHook.playerStats.experience} XP\n🏆 Level ${playerStatsHook.playerStats.level} NFT minted!`);
-                resetGame();
-            }, 2000);
+            toast.error('Failed to claim rewards. Please try again.');
+
+            // TODO: KUSH
+            // Reset the rewards UI state on error
+            // gameStateHook.resetGameState();
         }
     };
 
@@ -356,7 +465,7 @@ export const useGameLogic = () => {
     };
 
     return {
-        // Wallet
+        // Wallet - Enhanced with new features from useWallet
         wallet: wallet.wallet,
         isConnectPending: wallet.isConnectPending,
         connectWallet: wallet.connectWallet,
@@ -393,6 +502,15 @@ export const useGameLogic = () => {
         currentQuestion: questionManager.getCurrentQuestionInLevel(gameStateHook.gameState.currentQuestion),
         totalNumberOfQuestions: questionManager.totalNumberOfQuestions,
         currentDifficulty: questionManager.getCurrentDifficultyLevel(gameStateHook.gameState.currentQuestion),
-        questionInLevel: questionManager.getQuestionInLevel(gameStateHook.gameState.currentQuestion)
+        questionInLevel: questionManager.getQuestionInLevel(gameStateHook.gameState.currentQuestion),
+
+        // Enhanced wallet features from updated useWallet hook
+        isSDKLoaded: wallet.isSDKLoaded,
+        context: wallet.context,
+        showSwitchNetworkBanner: wallet.showSwitchNetworkBanner,
+        isCorrectChain: wallet.isCorrectChain,
+        switchToTargetChain: wallet.switchToTargetChain,
+        isSwitchChainPending: wallet.isSwitchChainPending,
+        targetChain: wallet.targetChain
     };
 };

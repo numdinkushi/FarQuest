@@ -1,15 +1,20 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useDisconnect, useConnect, useSwitchChain, useChainId, Connector } from 'wagmi';
+import { useAccount, useDisconnect, useConnect, useSwitchChain, useChainId } from 'wagmi';
 import { WalletState } from '~/types';
 import { celo } from 'viem/chains';
+import sdk from "@farcaster/frame-sdk";
 
 export const useWallet = () => {
     console.log('Initializing useWallet hook...');
     const { address, isConnected, chain } = useAccount();
     const { disconnect } = useDisconnect();
-    const { connect, connectors, isPending: isConnectPending, error: connectError } = useConnect();
+    const { connect, connectors } = useConnect();
     const { switchChain, isPending: isSwitchChainPending } = useSwitchChain();
     const chainId = useChainId();
+
+    // SDK state management
+    const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+    const [context, setContext] = useState<any>(null);
 
     // Define target chain
     const CELO_CHAIN_ID = celo.id;
@@ -21,6 +26,38 @@ export const useWallet = () => {
         address: ''
     });
 
+    // Initialize Farcaster SDK
+    useEffect(() => {
+        const initializeSDK = async () => {
+            try {
+                if (typeof window !== 'undefined' && sdk) {
+                    console.log('Initializing Farcaster SDK...');
+                    
+                    // Set up SDK
+                    sdk.actions.ready({});
+                    
+                    // Get context if available
+                    const sdkContext = await sdk.context;
+                    setContext(sdkContext);
+                    
+                    // Add frame if in Farcaster environment
+                    if (sdk.actions?.addFrame) {
+                        await sdk.actions.addFrame();
+                    }
+                    
+                    setIsSDKLoaded(true);
+                    console.log('Farcaster SDK initialized successfully');
+                }
+            } catch (error) {
+                console.error('Failed to initialize Farcaster SDK:', error);
+                // Set SDK as loaded anyway to allow web fallback
+                setIsSDKLoaded(true);
+            }
+        };
+
+        initializeSDK();
+    }, []);
+
     // Sync wagmi state with local wallet state
     useEffect(() => {
         console.log('Syncing wallet state:', { isConnected, address });
@@ -30,37 +67,32 @@ export const useWallet = () => {
         });
     }, [isConnected, address]);
 
-    // Enhanced wallet connection - simplified version
-    const connectWallet = useCallback(async (connector?: Connector): Promise<void> => {
+    // Enhanced wallet connection with Farcaster SDK support
+    const connectWallet = useCallback(async (): Promise<void> => {
         try {
-            console.log('connectWallet called with connector:', connector);
+            console.log('connectWallet called');
             console.log('Available connectors:', connectors.map(c => ({ id: c.id, name: c.name, ready: c.ready })));
 
-            // If no specific connector provided, use the connect function directly
+            // Bank of Celo style connector selection - prefer injected (MetaMask) or fallback
+            const connector = connectors.find((c) => c.id === "injected") || connectors[0];
+
             if (!connector) {
-                // Try to find a good default connector
-                const defaultConnector =
-                    connectors.find((c) => c.id === "metaMask") ||
-                    connectors.find((c) => c.id === "coinbaseWalletSDK") ||
-                    connectors.find((c) => c.id === "injected") ||
-                    connectors[0];
-
-                if (!defaultConnector) {
-                    throw new Error('No wallet connectors available');
-                }
-
-                console.log('Using default connector:', defaultConnector.name);
-                await connect({ connector: defaultConnector });
-            } else {
-                console.log('Using provided connector:', connector.name);
-                await connect({ connector });
+                throw new Error('No wallet connectors available');
             }
+
+            console.log('Using connector:', connector.name);
+            
+            // Connect with target chain ID like Bank of Celo
+            await connect({
+                connector,
+                chainId: CELO_CHAIN_ID,
+            });
 
         } catch (error) {
             console.error('Wallet connection failed:', error);
             throw new Error(`Failed to connect wallet: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-    }, [connect, connectors]);
+    }, [connect, connectors, CELO_CHAIN_ID]);
 
     // Enhanced disconnect that accepts optional callback for saving state
     const disconnectWallet = useCallback(async (onBeforeDisconnect?: () => Promise<void>): Promise<void> => {
@@ -97,10 +129,9 @@ export const useWallet = () => {
             address,
             chainId: chain?.id,
             chainName: chain?.name,
-            isConnectPending,
-            connectError: connectError?.message
+            connectError: null
         });
-    }, [isConnected, address, chain, isConnectPending, connectError]);
+    }, [isConnected, address, chain]);
 
     // Log connector status
     useEffect(() => {
@@ -125,11 +156,15 @@ export const useWallet = () => {
         targetChain,
         switchToTargetChain,
         isSwitchChainPending,
-        isConnectPending,
-        connectError,
+        isConnectPending: false,
 
         // Connection utilities
         availableConnectors: connectors,
+
+        // Farcaster SDK features
+        isSDKLoaded,
+        context,
+        showSwitchNetworkBanner: isConnected && !isCorrectChain,
 
         // Raw wagmi hooks for advanced usage
         rawWagmiData: {
@@ -140,4 +175,3 @@ export const useWallet = () => {
         }
     };
 };
-

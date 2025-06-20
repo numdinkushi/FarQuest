@@ -104,7 +104,7 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                 >
-                    🎁 Claim Rewards & Mint NFT
+                    🎁 Claim Rewards in Celo
                 </motion.button>
 
                 <motion.button
