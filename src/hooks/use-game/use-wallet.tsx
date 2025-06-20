@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useState, useCallback, useEffect } from 'react';
 import { useAccount, useDisconnect, useConnect, useSwitchChain, useChainId } from 'wagmi';
 import { WalletState } from '~/types';
