@@ -369,14 +369,14 @@ export const useGameLogic = () => {
     const claimRewards = async (): Promise<void> => {
         console.log('Claiming rewards...');
 
-        try {
+        try { 
             const rewards = await claimConvexRewards();
             console.log('Rewards claimed successfully:', rewards);
 
             if (rewards) {
                 const crystals = rewards?.crystals;
                 const level = Math.ceil(crystals * SCALE_FACTOR);
-                const secret = keccak256(toBytes(CLAIM_SECRET || ''));
+                const secret = keccak256(toBytes(CLAIM_SECRET || ''))
                 console.log('Claiming level:', level, 'with secret:', secret);
                 
                 const claimRewardData = encodeFunctionData({
