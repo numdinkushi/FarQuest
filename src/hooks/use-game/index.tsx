@@ -11,8 +11,6 @@ import { CLAIM_SECRET, SCALE_FACTOR } from '~/constants';
 import { FARQUEST_ABI, FARQUEST_CONTRACT_ADDRESS } from '~/lib/constant';
 import { encodeFunctionData, keccak256, parseUnits, toBytes } from 'viem';
 import { usePublicClient, useSendTransaction } from 'wagmi';
-import { celo } from 'viem/chains';
-
 
 export const useGameLogic = () => {
     const { sendTransactionAsync } = useSendTransaction();
@@ -349,6 +347,7 @@ export const useGameLogic = () => {
 
     // const claimRewards = async (): Promise<void> => {
     //     gameStateHook.showRewards();
+    // TODO: KUSH CLEAN UP THIS, REMOVE
 
     //     try {
     //         const rewards = await claimConvexRewards();
@@ -445,6 +444,7 @@ export const useGameLogic = () => {
             console.error('Failed to claim rewards:', error);
             toast.error('Failed to claim rewards. Please try again.');
 
+            // TODO: KUSH
             // Reset the rewards UI state on error
             // gameStateHook.resetGameState();
         }

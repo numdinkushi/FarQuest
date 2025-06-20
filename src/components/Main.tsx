@@ -26,6 +26,7 @@ const FarquestGame: React.FC = () => {
     isConnectPending,
     currentQuestion,
     totalNumberOfQuestions,
+    user,
     // Enhanced wallet features from updated useWallet
     isSDKLoaded,
     context,
@@ -62,7 +63,7 @@ const FarquestGame: React.FC = () => {
       }}
     >
       <div className="w-full max-w-md mx-auto bg-black/20 backdrop-blur-xl rounded-3xl border border-purple-500/30 overflow-hidden shadow-2xl">
-        <GameHeader gameState={gameState.state} />
+        <GameHeader gameState={gameState.state} username={user?.username || ''} />
 
         <div className="p-4 border-b border-purple-500/20">
           <WalletConnection
