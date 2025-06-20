@@ -7,10 +7,19 @@ import { useGameMechanics } from './use-game-mechanics';
 import { useQuestionManager } from './use-question';
 import { useUserManagement } from './use-user';
 import { toast } from 'sonner'; // For error notifications
+import { CLAIM_SECRET, SCALE_FACTOR } from '~/constants';
+import { FARQUEST_ABI, FARQUEST_CONTRACT_ADDRESS } from '~/lib/constant';
+import { encodeFunctionData, keccak256, parseUnits, toBytes } from 'viem';
+import { usePublicClient, useSendTransaction } from 'wagmi';
+import { celo } from 'viem/chains';
+
 
 export const useGameLogic = () => {
+    const { sendTransactionAsync } = useSendTransaction();
+    const publicClient = usePublicClient();
+
     // Initialize all sub-hooks with enhanced wallet support
-    const wallet = useWallet(); 
+    const wallet = useWallet();
     const gameStateHook = useGameState();
     const playerStatsHook = usePlayerStats();
     const mechanicsHook = useGameMechanics();
@@ -338,23 +347,106 @@ export const useGameLogic = () => {
         }
     };
 
+    // const claimRewards = async (): Promise<void> => {
+    //     gameStateHook.showRewards();
+
+    //     try {
+    //         const rewards = await claimConvexRewards();
+    //         console.log('Rewards claimed successfully:', rewards);
+    //         // setTimeout(() => {
+    //         //     alert(`🎉 Rewards claimed!\n💎 ${rewards?.crystals || playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${rewards?.experience || playerStatsHook.playerStats.experience} XP\n🏆 Level ${rewards?.level || playerStatsHook.playerStats.level} NFT minted!`);
+    //         //     resetGame();
+    //         // }, 2000);
+    //     } catch (error) {
+    //         console.error('Failed to claim rewards:', error);
+    //         // Fallback to local data if Convex fails
+    //         setTimeout(() => {
+    //             alert(`🎉 Rewards claimed!\n💎 ${playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${playerStatsHook.playerStats.experience} XP\n🏆 Level ${playerStatsHook.playerStats.level} NFT minted!`);
+    //             resetGame();
+    //         }, 2000);
+    //     }
+    // };
+
     const claimRewards = async (): Promise<void> => {
-        gameStateHook.showRewards();
+        console.log('Claiming rewards...');
 
         try {
             const rewards = await claimConvexRewards();
             console.log('Rewards claimed successfully:', rewards);
-            // setTimeout(() => {
-            //     alert(`🎉 Rewards claimed!\n💎 ${rewards?.crystals || playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${rewards?.experience || playerStatsHook.playerStats.experience} XP\n🏆 Level ${rewards?.level || playerStatsHook.playerStats.level} NFT minted!`);
-            //     resetGame();
-            // }, 2000);
+
+            if (rewards) {
+                const crystals = rewards?.crystals;
+                const level = Math.ceil(crystals * SCALE_FACTOR);
+                const secret = keccak256(toBytes(CLAIM_SECRET || ''));
+                console.log('Claiming level:', level, 'with secret:', secret);
+                
+                const claimRewardData = encodeFunctionData({
+                    abi: FARQUEST_ABI,
+                    functionName: "claimReward",
+                    args: [
+                        BigInt(level),
+                        secret
+                    ]
+                });
+
+                gameStateHook.showRewards();
+
+                // First estimate gas for the transaction
+                let gasEstimate;
+                try {
+                    gasEstimate = await publicClient?.estimateGas({
+                        to: FARQUEST_CONTRACT_ADDRESS,
+                        data: claimRewardData as `0x${string}`,
+                        // account: wallet.wallet.address,
+                    });
+                    console.log('Gas estimate:', gasEstimate);
+                } catch (estimateError) {
+                    console.error('Gas estimation failed:', estimateError);
+                    // Use a higher default gas limit if estimation fails
+                    gasEstimate = BigInt(300000);
+                }
+
+                // Add 20% buffer to gas estimate
+                const gasWithBuffer = gasEstimate ? gasEstimate + (gasEstimate * BigInt(20)) / BigInt(100) : BigInt(300000);
+
+                // Send the transaction with proper gas configuration
+                const hash = await sendTransactionAsync({
+                    to: FARQUEST_CONTRACT_ADDRESS,
+                    data: claimRewardData as `0x${string}`,
+                    chainId: 42220, // Use the imported celo chain ID
+                    gas: gasWithBuffer, // Set gas limit
+                    maxFeePerGas: parseUnits("2", 9), // 2 Gwei
+                    maxPriorityFeePerGas: parseUnits("1", 9), // 1 Gwei
+                });
+
+                if (!publicClient || !hash) {
+                    throw new Error('Transaction failed or public client not available');
+                }
+
+                console.log('Transaction hash:', hash);
+
+                const receipt = await publicClient.waitForTransactionReceipt({
+                    hash,
+                });
+
+                console.log('Transaction receipt:', receipt);
+
+                if (receipt.status !== 'success') {
+                    throw new Error('Transaction failed');
+                }
+
+                resetGame();
+                console.log(`Rewards claimed successfully! Level: ${level}`);
+
+                // Show success message
+                toast.success(`🎉 Rewards claimed!\n💎 ${crystals} Crystals\n⭐ ${rewards.experience} XP\n🏆 Level ${level} NFT minted!`);
+            }
         } catch (error) {
             console.error('Failed to claim rewards:', error);
-            // Fallback to local data if Convex fails
-            setTimeout(() => {
-                alert(`🎉 Rewards claimed!\n💎 ${playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${playerStatsHook.playerStats.experience} XP\n🏆 Level ${playerStatsHook.playerStats.level} NFT minted!`);
-                resetGame();
-            }, 2000);
+            toast.error('Failed to claim rewards. Please try again.');
+
+            // Reset the rewards UI state on error
+            // gameStateHook.resetGameState();
         }
     };
 

@@ -17,7 +17,7 @@ export const RewardsScreen: React.FC = () => {
                 >
                     ⚡
                 </motion.div>
-                <h2 className="text-2xl font-bold text-white">Minting Rewards...</h2>
+                <h2 className="text-2xl font-bold text-white">Transferring Celo...</h2>
                 <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 rounded-xl p-4">
                     <motion.div
                         className="w-full bg-yellow-900/50 rounded-full h-3 mb-2"
