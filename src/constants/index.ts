@@ -8,7 +8,8 @@ export const APP_OG_IMAGE_URL = `${APP_URL}/opengraph-image`;
 export const APP_SPLASH_URL = `${APP_URL}/splash.png`;
 export const APP_SPLASH_BACKGROUND_COLOR = "#f7f7f7";
 export const APP_BUTTON_TEXT = process.env.NEXT_PUBLIC_FRAME_BUTTON_TEXT;
-
+export const SCALE_FACTOR = 0.001126 //to ensure only a maximum of 2 celo is claimed
+export const CLAIM_SECRET = process.env.NEXT_PUBLIC_CLAIM_SECRET;
 
 import { Difficulty } from "~/types";
 

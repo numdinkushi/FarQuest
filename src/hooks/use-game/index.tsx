@@ -343,10 +343,11 @@ export const useGameLogic = () => {
 
         try {
             const rewards = await claimConvexRewards();
-            setTimeout(() => {
-                alert(`🎉 Rewards claimed!\n💎 ${rewards?.crystals || playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${rewards?.experience || playerStatsHook.playerStats.experience} XP\n🏆 Level ${rewards?.level || playerStatsHook.playerStats.level} NFT minted!`);
-                resetGame();
-            }, 2000);
+            console.log('Rewards claimed successfully:', rewards);
+            // setTimeout(() => {
+            //     alert(`🎉 Rewards claimed!\n💎 ${rewards?.crystals || playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${rewards?.experience || playerStatsHook.playerStats.experience} XP\n🏆 Level ${rewards?.level || playerStatsHook.playerStats.level} NFT minted!`);
+            //     resetGame();
+            // }, 2000);
         } catch (error) {
             console.error('Failed to claim rewards:', error);
             // Fallback to local data if Convex fails
