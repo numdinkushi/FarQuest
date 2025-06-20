@@ -14,7 +14,7 @@ export const useWallet = () => {
 
     // SDK state management
     const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-    const [context, setContext] = useState<any>(null);
+    const [context, setContext] = useState<unknown>(null);
 
     // Define target chain
     const CELO_CHAIN_ID = celo.id;
