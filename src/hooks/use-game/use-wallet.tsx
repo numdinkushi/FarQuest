@@ -5,6 +5,7 @@ import { useAccount, useDisconnect, useConnect, useSwitchChain, useChainId } fro
 import { WalletState } from '~/types';
 import { celo } from 'viem/chains';
 import sdk from "@farcaster/frame-sdk";
+import { FrameContext } from '@farcaster/frame-core/dist/context';
 
 export const useWallet = () => {
   console.log('Initializing useWallet hook...');
@@ -16,7 +17,7 @@ export const useWallet = () => {
 
   // SDK state management
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const [context, setContext] = useState<unknown>(null);
+  const [context, setContext] = useState<FrameContext>(null);
 
   // Define target chain
   const CELO_CHAIN_ID = celo.id;
