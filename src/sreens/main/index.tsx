@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/ban-ts-comment: "off" */
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useCallback, useEffect } from 'react';
 import { useAccount, usePublicClient } from 'wagmi';
@@ -35,7 +36,6 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
                 args: [address],
             });
 
-            // @ts-expect-error viem types may not match exactly
             setIsRegistered(registered[0]); // First field in User struct is 'registered'
         } catch (error) {
             console.error("Error checking registration:", error);
