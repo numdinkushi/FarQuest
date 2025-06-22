@@ -1,18 +1,18 @@
 import { QUESTIONS } from '~/constants';
 import { Difficulty } from '~/types';
 
-// const DIFFICULTY_ORDER: Difficulty[] = [
-//     'Starter', 'Novice', 'Explorer', 'Adventurer', 'Legend',
-//     'Conqueror', 'Star', 'Galaxy', 'Cosmic', 'Oracle',
-//     'Sage', 'Visionary', 'Luminary', 'Titan', 'Farquest Master'
-// ];
-
 const DIFFICULTY_ORDER: Difficulty[] = [
-    'Starter', 'Novice', 'Explorer',
+    'Starter', 'Novice', 'Explorer', 'Adventurer', 'Legend',
+    'Conqueror', 'Star', 'Galaxy', 'Cosmic', 'Oracle',
+    'Sage', 'Visionary', 'Luminary', 'Titan', 'Farquest Master'
 ];
 
-// const QUESTIONS_PER_LEVEL = 12;
-const QUESTIONS_PER_LEVEL = 2;
+// const DIFFICULTY_ORDER: Difficulty[] = [
+//     'Starter', 'Novice', 'Explorer',
+// ];
+
+const QUESTIONS_PER_LEVEL = 12;
+// const QUESTIONS_PER_LEVEL = 2;
 
 export const useQuestionManager = () => {
     const totalNumberOfQuestions = DIFFICULTY_ORDER.length * QUESTIONS_PER_LEVEL;

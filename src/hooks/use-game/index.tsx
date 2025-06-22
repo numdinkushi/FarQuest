@@ -345,27 +345,6 @@ export const useGameLogic = () => {
         }
     };
 
-    // const claimRewards = async (): Promise<void> => {
-    //     gameStateHook.showRewards();
-    // TODO: KUSH CLEAN UP THIS, REMOVE
-
-    //     try {
-    //         const rewards = await claimConvexRewards();
-    //         console.log('Rewards claimed successfully:', rewards);
-    //         // setTimeout(() => {
-    //         //     alert(`🎉 Rewards claimed!\n💎 ${rewards?.crystals || playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${rewards?.experience || playerStatsHook.playerStats.experience} XP\n🏆 Level ${rewards?.level || playerStatsHook.playerStats.level} NFT minted!`);
-    //         //     resetGame();
-    //         // }, 2000);
-    //     } catch (error) {
-    //         console.error('Failed to claim rewards:', error);
-    //         // Fallback to local data if Convex fails
-    //         setTimeout(() => {
-    //             alert(`🎉 Rewards claimed!\n💎 ${playerStatsHook.playerStats.crystalsCollected} Crystals\n⭐ ${playerStatsHook.playerStats.experience} XP\n🏆 Level ${playerStatsHook.playerStats.level} NFT minted!`);
-    //             resetGame();
-    //         }, 2000);
-    //     }
-    // };
-
     const claimRewards = async (): Promise<void> => {
         console.log('Claiming rewards...');
 
@@ -438,15 +417,15 @@ export const useGameLogic = () => {
                 console.log(`Rewards claimed successfully! Level: ${level}`);
 
                 // Show success message
-                toast.success(`🎉 Rewards claimed!\n💎 ${crystals} Crystals\n⭐ ${rewards.experience} XP\n🏆 Level ${level} NFT minted!`);
+                // toast.success(`🎉 Rewards claimed!\n💎 ${crystals} Crystals\n⭐ ${rewards.experience} XP\n🏆 Level ${level} NFT minted!`);
             }
         } catch (error) {
             console.error('Failed to claim rewards:', error);
-            toast.error('Failed to claim rewards. Please try again.');
+            // toast.error('Failed to claim rewards. Please try again.');
 
             // TODO: KUSH
             // Reset the rewards UI state on error
-            // gameStateHook.resetGameState();
+            gameStateHook.resetGameState();
         }
     };
 
