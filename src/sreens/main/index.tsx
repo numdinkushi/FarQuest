@@ -36,9 +36,10 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
                 args: [address],
             });
 
-            setIsRegistered(registered[0]); // First field in User struct is 'registered'
+            // setIsRegistered(registered[0]); // First field in User struct is 'registered'
+            setIsRegistered(false); // First field in User struct is 'registered'
         } catch (error) {
-            console.error("Error checking registration:", error);
+            console.log("Error checking registration:", error);
             toast.error("Failed to check registration status");
             setIsRegistered(false);
         } finally {

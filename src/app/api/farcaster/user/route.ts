@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     if (userDataArray && userDataArray.length > 0) {
       // Find the X username from verified_accounts
       const xAccount = userDataArray[0].verified_accounts.find(
-        (account: { platform: string; username: string }) =>
+        (account: { platform: string; username: string; }) =>
           account.platform === "x",
       );
       return NextResponse.json(
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   } catch (error) {
-    console.error("Error fetching Farcaster user:", error);
+    console.log("Error fetching Farcaster user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

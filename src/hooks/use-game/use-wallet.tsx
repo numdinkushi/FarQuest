@@ -48,7 +48,7 @@ export const useWallet = () => {
           console.log('Farcaster SDK initialized successfully');
         }
       } catch (error) {
-        console.error('Failed to initialize Farcaster SDK:', error);
+        console.log('Failed to initialize Farcaster SDK:', error);
         // Set SDK as loaded anyway to allow web fallback
         setIsSDKLoaded(true);
       }
@@ -87,7 +87,7 @@ export const useWallet = () => {
       });
 
     } catch (error) {
-      console.error('Wallet connection failed:', error);
+      console.log('Wallet connection failed:', error);
       throw new Error(`Failed to connect wallet: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }, [connect, connectors, CELO_CHAIN_ID]);
@@ -101,7 +101,7 @@ export const useWallet = () => {
         await onBeforeDisconnect();
       }
     } catch (error) {
-      console.error('Error during pre-disconnect logic:', error);
+      console.log('Error during pre-disconnect logic:', error);
       // Continue with disconnect even if save fails
     } finally {
       // Use wagmi's disconnect
@@ -115,7 +115,7 @@ export const useWallet = () => {
       console.log('Switching to target chain:', targetChain.name);
       await switchChain({ chainId: targetChain.id });
     } catch (error) {
-      console.error("Chain switch failed:", error);
+      console.log("Chain switch failed:", error);
       throw new Error(`Failed to switch to ${targetChain.name}. Please try again.`);
     }
   }, [switchChain, targetChain]);

@@ -60,7 +60,7 @@ export const useGameLogic = () => {
 
             console.log('Game state saved successfully');
         } catch (error) {
-            console.error('Failed to save game state:', error);
+            console.log('Failed to save game state:', error);
             // Don't throw - allow disconnect to continue even if save fails
         }
     }, [
@@ -113,7 +113,7 @@ export const useGameLogic = () => {
         if (playerStatsHook.playerStats.health <= 0 && gameStateHook.gameState.state === 'playing') {
             mechanicsHook.setGameOverState(true);
             gameStateHook.completeGame();
-            endGame('health_depleted').catch(console.error);
+            endGame('health_depleted').catch(console.log);
         }
     }, [playerStatsHook.playerStats.health, gameStateHook.gameState.state]);
 
@@ -163,7 +163,7 @@ export const useGameLogic = () => {
             mechanicsHook.resetMechanics();
 
         } catch (error) {
-            console.error('Failed to start game:', error);
+            console.log('Failed to start game:', error);
             throw new Error('Failed to start game session');
         }
     };
@@ -233,7 +233,7 @@ export const useGameLogic = () => {
                 score: isCorrect ? currentGameState.score + 1 : currentGameState.score
             });
         } catch (error) {
-            console.error('Failed to process answer in Convex:', error);
+            console.log('Failed to process answer in Convex:', error);
             // Continue with local state even if Convex fails
         }
 
@@ -249,7 +249,7 @@ export const useGameLogic = () => {
                 try {
                     await endGame('health_depleted');
                 } catch (error) {
-                    console.error('Failed to end game:', error);
+                    console.log('Failed to end game:', error);
                 }
                 return;
             }
@@ -289,7 +289,7 @@ export const useGameLogic = () => {
                 score: currentGameState.score
             });
         } catch (error) {
-            console.error('Failed to process time up in Convex:', error);
+            console.log('Failed to process time up in Convex:', error);
         }
 
         setTimeout(async () => {
@@ -301,7 +301,7 @@ export const useGameLogic = () => {
                 try {
                     await endGame('health_depleted');
                 } catch (error) {
-                    console.error('Failed to end game:', error);
+                    console.log('Failed to end game:', error);
                 }
                 return;
             }
@@ -320,7 +320,7 @@ export const useGameLogic = () => {
                 // Mark level as completed in Convex
                 await completeLevel(questionManager.getCurrentDifficultyLevel(currentQuestionNum));
             } catch (error) {
-                console.error('Failed to complete level:', error);
+                console.log('Failed to complete level:', error);
             }
 
             mechanicsHook.setLevelCompletedState(true);
@@ -340,7 +340,7 @@ export const useGameLogic = () => {
             try {
                 await endGame('completed');
             } catch (error) {
-                console.error('Failed to end game:', error);
+                console.log('Failed to end game:', error);
             }
         }
     };
@@ -348,16 +348,16 @@ export const useGameLogic = () => {
     const claimRewards = async (): Promise<void> => {
         console.log('Claiming rewards...');
 
-        try { 
+        try {
             const rewards = await claimConvexRewards();
             console.log('Rewards claimed successfully:', rewards);
 
             if (rewards) {
                 const crystals = rewards?.crystals;
                 const level = Math.ceil(crystals * SCALE_FACTOR);
-                const secret = keccak256(toBytes(CLAIM_SECRET || ''))
+                const secret = keccak256(toBytes(CLAIM_SECRET || ''));
                 console.log('Claiming level:', level, 'with secret:', secret);
-                
+
                 const claimRewardData = encodeFunctionData({
                     abi: FARQUEST_ABI,
                     functionName: "claimReward",
@@ -379,7 +379,7 @@ export const useGameLogic = () => {
                     });
                     console.log('Gas estimate:', gasEstimate);
                 } catch (estimateError) {
-                    console.error('Gas estimation failed:', estimateError);
+                    console.log('Gas estimation failed:', estimateError);
                     // Use a higher default gas limit if estimation fails
                     gasEstimate = BigInt(300000);
                 }
@@ -420,7 +420,7 @@ export const useGameLogic = () => {
                 // toast.success(`🎉 Rewards claimed!\n💎 ${crystals} Crystals\n⭐ ${rewards.experience} XP\n🏆 Level ${level} NFT minted!`);
             }
         } catch (error) {
-            console.error('Failed to claim rewards:', error);
+            console.log('Failed to claim rewards:', error);
             // toast.error('Failed to claim rewards. Please try again.');
 
             // TODO: KUSH

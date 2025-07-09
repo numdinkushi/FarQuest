@@ -6,6 +6,7 @@ import { GameFooter } from './app/footer/footer';
 import { useGameLogic } from '~/hooks/use-game';
 import { motion } from 'framer-motion';
 import { Home } from 'lucide-react';
+import SelfProtocolComponent from './app/self-protocol/self';
 
 const FarquestGame: React.FC = () => {
   const {
@@ -52,7 +53,7 @@ const FarquestGame: React.FC = () => {
   }
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4"
       style={{
         // Apply safe area insets from Farcaster context if available
@@ -79,6 +80,8 @@ const FarquestGame: React.FC = () => {
             targetChain={targetChain}
           />
         </div>
+
+        <SelfProtocolComponent />
 
         <GameContent
           gameState={gameState}

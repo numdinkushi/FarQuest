@@ -109,7 +109,7 @@ export default function Register({ isRegistered, setIsRegistered, onRegistration
           });
           console.log("Referral submitted successfully");
         } catch (diviError) {
-          console.error("Divi submitReferral error:", diviError);
+          console.log("Divi submitReferral error:", diviError);
           toast.warning(
             "Registration succeeded, but referral tracking failed. We're looking into it.",
           );
@@ -118,7 +118,7 @@ export default function Register({ isRegistered, setIsRegistered, onRegistration
         throw new Error("Transaction failed");
       }
     } catch (error) {
-      console.error("Registration error:", error);
+      console.log("Registration error:", error);
       toast.error(
         `Registration failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );

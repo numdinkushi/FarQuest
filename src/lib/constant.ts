@@ -1,4 +1,7 @@
+import { APP_URL } from "~/constants";
+
 export const FARQUEST_CONTRACT_ADDRESS="0x80695F4477eF8480A3084D027983E14Eb7e86476"
+export const APP_ICON_URL = `${APP_URL}/icon.png`;
 
 export const FARQUEST_ABI=[
     {
