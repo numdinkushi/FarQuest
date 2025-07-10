@@ -4,8 +4,11 @@ import { useState, useCallback, useEffect } from 'react';
 import { useAccount, usePublicClient } from 'wagmi';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api'; // Adjust path as needed
 import Register from '~/components/Register';
 import { FARQUEST_ABI, FARQUEST_CONTRACT_ADDRESS } from '~/lib/constant';
+import SelfProtocolComponent from '~/components/app/self-protocol/self';
 
 interface MenuScreenProps {
     isWalletConnected: boolean;
@@ -18,8 +21,16 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
     const [showInstructions, setShowInstructions] = useState(false);
     const [isRegistered, setIsRegistered] = useState(false);
     const [isCheckingRegistration, setIsCheckingRegistration] = useState(true);
+    const [showSelfProtocol, setShowSelfProtocol] = useState(false);
 
-    // Check if user is already registered
+    // Check if user is already verified OG from Convex DB
+    const userData = useQuery(api.queries.getUserByAddress, {
+        address: address || "",
+    });
+
+    const isVerifiedOG = userData?.isOG || false;
+
+    // Check if user is already registered on blockchain
     const checkRegistration = useCallback(async () => {
         if (!address || !publicClient || !isWalletConnected) {
             setIsCheckingRegistration(false);
@@ -36,8 +47,7 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
                 args: [address],
             });
 
-            // setIsRegistered(registered[0]); // First field in User struct is 'registered'
-            setIsRegistered(false); // First field in User struct is 'registered'
+            setIsRegistered(registered[0]); // First field in User struct is 'registered'
         } catch (error) {
             console.log("Error checking registration:", error);
             toast.error("Failed to check registration status");
@@ -51,6 +61,19 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
     useEffect(() => {
         checkRegistration();
     }, [checkRegistration]);
+
+    // Handle successful registration
+    const handleRegistrationSuccess = () => {
+        setIsRegistered(true);
+        // After successful registration, show self protocol verification
+        setShowSelfProtocol(true);
+        checkRegistration();
+    };
+
+    // Handle self protocol completion (either skip or verify)
+    const handleSelfProtocolComplete = () => {
+        setShowSelfProtocol(false);
+    };
 
     // Show loading state while checking registration
     if (isWalletConnected && isCheckingRegistration) {
@@ -72,6 +95,11 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
         );
     }
 
+    // Determine what to show based on registration and OG status
+    const shouldShowRegister = isWalletConnected && !isRegistered;
+    const shouldShowSelfProtocol = isWalletConnected && isRegistered && !isVerifiedOG && showSelfProtocol;
+    const shouldShowProceedSection = isWalletConnected && isRegistered && (isVerifiedOG || !showSelfProtocol);
+
     return (
         <>
             <motion.div
@@ -81,20 +109,44 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
                 exit={{ opacity: 0, scale: 1.1 }}
                 className="text-center space-y-8"
             >
-                {isWalletConnected && isRegistered && (
+                {/* Show Registration Component */}
+                {shouldShowRegister && (
+                    <Register
+                        isRegistered={isRegistered}
+                        setIsRegistered={setIsRegistered}
+                        onRegistrationSuccess={handleRegistrationSuccess}
+                    />
+                )}
+
+                {/* Show Self Protocol Component */}
+                {shouldShowSelfProtocol && (
+                    <div className="mb-3">
+                        <SelfProtocolComponent onComplete={handleSelfProtocolComplete} />
+                    </div>
+                )}
+
+                {/* Show Proceed Section (Game Instructions + Begin Quest) */}
+                {shouldShowProceedSection && (
                     <>
                         <div className="space-y-6">
                             <div className="text-6xl">🏰</div>
-                            <h2 className="text-3xl font-bold text-white">Welcome, Adventurer!</h2>
+                            <h2 className="text-3xl font-bold text-white">
+                                Welcome, Adventurer{isVerifiedOG ? ' (O.G)' : ''}!
+                            </h2>
                             <p className="text-lg text-purple-200 max-w-md mx-auto">
                                 Embark on an epic quest through the Web3 realm. Answer mystical questions to collect crystals and level up!
+                                {isVerifiedOG && (
+                                    <span className="block mt-2 text-yellow-300 font-semibold">
+                                        🌟 O.G Status: 2x Rewards Active! 🌟
+                                    </span>
+                                )}
                             </p>
                         </div>
 
                         <div className="space-y-6 max-w-md mx-auto">
                             <motion.button
                                 onClick={() => setShowInstructions(true)}
-                                className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600  rounded-xl text-white font-semibold hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg"
+                                className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl text-white font-semibold hover:from-purple-700 hover:to-blue-700 transition-all duration-300 shadow-lg"
                                 whileHover={{
                                     scale: 1.05,
                                     boxShadow: "0 0 40px rgba(168, 85, 247, 0.6)",
@@ -114,7 +166,7 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
 
                             <motion.button
                                 onClick={onStartGame}
-                                className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600   rounded-xl text-white font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg"
+                                className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl text-white font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg"
                                 whileHover={{
                                     scale: 1.05,
                                     boxShadow: "0 0 40px rgba(34, 197, 94, 0.6)",
@@ -131,19 +183,31 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ isWalletConnected, onSta
                                     Begin Quest
                                 </span>
                             </motion.button>
+
+                            {/* Show option to verify with Self Protocol if not already verified */}
+                            {!isVerifiedOG && (
+                                <motion.button
+                                    onClick={() => setShowSelfProtocol(true)}
+                                    className="w-full py-3 bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl text-white font-semibold hover:from-amber-700 hover:to-orange-700 transition-all duration-300 shadow-lg"
+                                    whileHover={{
+                                        scale: 1.05,
+                                        boxShadow: "0 0 40px rgba(245, 158, 11, 0.6)",
+                                        y: -2
+                                    }}
+                                    whileTap={{ scale: 0.95 }}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #d97706 0%, #ea580c 100%)',
+                                        boxShadow: '0 8px 32px rgba(217, 119, 6, 0.3)',
+                                    }}
+                                >
+                                    <span className="flex items-center justify-center gap-3">
+                                        <span className="text-2xl">🌟</span>
+                                        Verify for O.G Status (2x Rewards)
+                                    </span>
+                                </motion.button>
+                            )}
                         </div>
                     </>
-                )}
-
-                {isWalletConnected && !isRegistered && (
-                    <Register
-                        isRegistered={isRegistered}
-                        setIsRegistered={setIsRegistered}
-                        onRegistrationSuccess={() => {
-                            // Optionally re-check registration after successful registration
-                            checkRegistration();
-                        }}
-                    />
                 )}
             </motion.div>
 

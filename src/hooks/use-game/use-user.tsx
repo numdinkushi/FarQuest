@@ -64,7 +64,7 @@ export const useUserManagement = (walletAddress: string) => {
                     const username = await fetchUsernameFromNeynar(walletAddress);
                     console.log('Fetched username:', username);
 
-                    await createUserWithUsername(username, true);
+                    await createUserWithUsername(username, false);
                     console.log('User auto-created successfully with username:', username);
                 } catch (error) {
                     console.log('Auto user creation failed:', error);

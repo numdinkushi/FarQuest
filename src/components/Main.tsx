@@ -6,7 +6,6 @@ import { GameFooter } from './app/footer/footer';
 import { useGameLogic } from '~/hooks/use-game';
 import { motion } from 'framer-motion';
 import { Home } from 'lucide-react';
-import SelfProtocolComponent from './app/self-protocol/self';
 
 const FarquestGame: React.FC = () => {
   const {
@@ -80,8 +79,6 @@ const FarquestGame: React.FC = () => {
             targetChain={targetChain}
           />
         </div>
-
-        <SelfProtocolComponent />
 
         <GameContent
           gameState={gameState}

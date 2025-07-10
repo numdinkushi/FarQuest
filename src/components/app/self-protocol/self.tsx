@@ -17,7 +17,6 @@ import {
     X,
 } from "lucide-react";
 import { useAccount } from "wagmi";
-// import { APP_ICON_URL } from "~/lib/constants";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { toast } from "sonner";
@@ -26,8 +25,11 @@ import { APP_URL } from "~/constants";
 import { updateUserOGStatus } from "../../../../convex/users";
 import { useWallet } from "~/hooks/use-game/use-wallet";
 
-const SelfProtocolComponent: React.FC = () => {
+interface SelfProtocolComponentProps {
+    onComplete?: () => void;
+}
 
+const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplete }) => {
     const { address } = useAccount();
     const router = useRouter();
 
@@ -42,8 +44,7 @@ const SelfProtocolComponent: React.FC = () => {
         address: address || "",
     });
 
-    // const isVerifiedOG = userData?.isOG || false;
-    const isVerifiedOG = false;
+    const isVerifiedOG = userData?.isOG || false;
 
     console.log(909090, { userData }, { address }, { isVerifiedOG });
 
@@ -96,7 +97,7 @@ const SelfProtocolComponent: React.FC = () => {
             })
             .catch((err) => {
                 console.log("Failed to copy text: ", err);
-                toast.success("Failed to copy link");
+                toast.error("Failed to copy link");
             });
     };
 
@@ -115,7 +116,8 @@ const SelfProtocolComponent: React.FC = () => {
     const handleSkipVerification = (): void => {
         displayToast("Verification skipped. Continuing without O.G benefits.");
         setTimeout(() => {
-            router.push("/");
+            // Call onComplete to return to the main menu
+            onComplete?.();
         }, 1000);
     };
 
@@ -136,56 +138,18 @@ const SelfProtocolComponent: React.FC = () => {
         // }
 
         setTimeout(() => {
-            router.push("/");
+            // Call onComplete to return to the main menu
+            onComplete?.();
         }, 1500);
     };
 
+    // If user is already verified, don't show the verification screen
     if (isVerifiedOG) {
-        return (
-            <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
-                <div className="text-center max-w-md mx-auto">
-                    {/* Verified OG Status */}
-                    <div className="mb-6">
-                        <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-                            <Verified className="w-8 h-8 text-white" />
-                        </div>
-                        <h3 className="text-xl font-bold text-white mb-2">
-                            You are Verified!
-                        </h3>
-                        <p className="text-gray-300 text-sm leading-relaxed">
-                            Your identity has been successfully verified. You now have access
-                            to O.G benefits including 2x rewards!
-                        </p>
-                    </div>
-
-                    {/* Celebration Card */}
-                    <div className="bg-purple-500/10 rounded-xl p-6 border border-purple-500/20 mb-6">
-                        <div className="flex flex-col items-center">
-                            <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mb-3">
-                                <Verified className="w-6 h-6 text-white" />
-                            </div>
-                            <h4 className="text-purple-400 font-medium text-sm mb-2">
-                                O.G Status Active
-                            </h4>
-                            <p className="text-gray-300 text-xs">
-                                Enjoy your exclusive benefits across the platform
-                            </p>
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={() => router.push("/")}
-                        className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 transition-colors text-white py-3 px-6 rounded-xl font-medium w-full"
-                    >
-                        Continue to App
-                    </button>
-                </div>
-            </div>
-        );
+        return null;
     }
 
     return (
-        <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
+        <div className="w-full bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
             <div className="text-center max-w-md mx-auto">
                 {/* Header */}
                 <div className="mb-6">
