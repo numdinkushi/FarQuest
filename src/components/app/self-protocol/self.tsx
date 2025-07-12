@@ -38,6 +38,7 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
     const [toastMessage, setToastMessage] = useState<string>("");
     const [selfApp, setSelfApp] = useState<SelfApp | null>(null);
     const [universalLink, setUniversalLink] = useState<string>("");
+    const updateUserOGStatus = useMutation(api.users.updateUserOGStatus);
 
     // Check if user is already verified OG
     const userData = useQuery(api.queries.getUserByAddress, {
@@ -59,8 +60,9 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
             const app = new SelfAppBuilder({
                 appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Farquest",
                 scope: "farquest",
-                devMode: false,
-                endpoint: `${APP_URL}/api/self-protocol`,
+                devMode: true,
+                endpoint: `https://free-hamster-loving.ngrok-free.app/api/self-protocol`,
+                // endpoint: `${APP_URL}/api/self-protocol`,
                 logoBase64: APP_ICON_URL,
                 userId: address,
                 endpointType: "https",
@@ -127,15 +129,15 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
         displayToast("Identity verified successfully!");
 
         // Update user's OG status in Convex database
-        // if (address) {
-        //     try {
-        //         await updateUserOGStatus({ address, isOG: true });
-        //         console.log("User OG status updated successfully for address:", address);
-        //     } catch (error) {
-        //         console.error("Failed to update user OG status:", error);
-        //         toast.error("Failed to update verification status");
-        //     }
-        // }
+        if (address) {
+            try {
+                await updateUserOGStatus({ address, isOG: true });
+                console.log("User OG status updated successfully for address:", address);
+            } catch (error) {
+                console.error("Failed to update user OG status:", error);
+                toast.error("Failed to update verification status");
+            }
+        }
 
         setTimeout(() => {
             // Call onComplete to return to the main menu
