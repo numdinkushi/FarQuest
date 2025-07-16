@@ -57,16 +57,15 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
         if (!address || isVerifiedOG) return;
 
         try {
+            // Keep the original configuration that was working
             const app = new SelfAppBuilder({
                 appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Farquest",
                 scope: "farquest",
-                devMode: true,
                 endpoint: `https://free-hamster-loving.ngrok-free.app/api/self-protocol`,
-                // endpoint: `${APP_URL}/api/self-protocol`,
+                endpointType: "https",
                 logoBase64: APP_ICON_URL,
                 userId: address,
-                endpointType: "https",
-                userIdType: "hex",
+                userIdType: "hex", // Keep this - it's still required according to docs
                 disclosures: {
                     minimumAge,
                     ofac: checkOFAC,
@@ -118,7 +117,6 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
     const handleSkipVerification = (): void => {
         displayToast("Verification skipped. Continuing without O.G benefits.");
         setTimeout(() => {
-            // Call onComplete to return to the main menu
             onComplete?.();
         }, 1000);
     };
@@ -140,7 +138,6 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
         }
 
         setTimeout(() => {
-            // Call onComplete to return to the main menu
             onComplete?.();
         }, 1500);
     };

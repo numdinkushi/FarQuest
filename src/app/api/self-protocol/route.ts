@@ -11,31 +11,27 @@ export async function POST(req: NextRequest) {
   try {
     const { proof, publicSignals } = await req.json();
 
-    // if (!proof || !publicSignals) {
-    //   return NextResponse.json(
-    //     { message: 'Proof and publicSignals are required' },
-    //     { status: 400 }
-    //   );
-    // }
+    if (!proof || !publicSignals) {
+      return NextResponse.json(
+        { message: 'Proof and publicSignals are required' },
+        { status: 400 }
+      );
+    }
 
-    console.log("Received USER**:", req.body);
+    console.log("Received proof data:", { proof, publicSignals });
 
     // Extract user ID from the proof
     const USERID = await getUserIdentifier(publicSignals);
     console.log("Extracted userId:", USERID);
-    console.log("Proof:", proof);
 
     // Initialize and configure the verifier
+    // Try the simplified constructor first (new version)
     const selfBackendVerifier = new SelfBackendVerifier(
-      `farquest`, // scope
-      // `https://far-quest.vercel.app/api/self-protocol`, // endpoint
-      `https://free-hamster-loving.ngrok-free.app/api/self-protocol`, // endpoint
-      "hex", // user_identifier_type
-      // mockPassport
+      "farquest", // scope
+      "https://free-hamster-loving.ngrok-free.app/api/self-protocol" // endpoint
     );
-    console.log("passed");
 
-    console.log("Initialized SelfBackendVerifier:", selfBackendVerifier);
+    console.log("Initialized SelfBackendVerifier");
 
     // Verify the proof
     const result = await selfBackendVerifier.verify(proof, publicSignals);
@@ -64,6 +60,42 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     console.error("Error verifying proof:", error);
+    
+    // If the error is about constructor parameters, try the old version
+    if (error instanceof Error && error.message.includes('constructor')) {
+      console.log("Trying old constructor format...");
+      try {
+        const selfBackendVerifier = new SelfBackendVerifier(
+          "farquest", // scope
+          "https://free-hamster-loving.ngrok-free.app/api/self-protocol", // endpoint
+          "hex" // user_identifier_type
+        );
+        
+        const { proof, publicSignals } = await req.json();
+        const result = await selfBackendVerifier.verify(proof, publicSignals);
+        
+        if (result.isValid) {
+          return NextResponse.json({
+            status: "success",
+            result: true,
+            credentialSubject: result.credentialSubject,
+          });
+        }
+        
+        return NextResponse.json(
+          {
+            status: "error",
+            result: false,
+            message: "Verification failed",
+            details: result.isValidDetails,
+          },
+          { status: 400 },
+        );
+      } catch (retryError) {
+        console.error("Retry also failed:", retryError);
+      }
+    }
+    
     return NextResponse.json(
       {
         status: "error",
@@ -74,4 +106,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
- 
