@@ -37,7 +37,7 @@ export const useConvexGame = (walletAddress?: string) => {
             console.log('User created with ID:', userId);
             return userId;
         } catch (err) {
-            console.error('Error creating user:', err);
+            console.log('Error creating user:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to create user';
             setError(errorMessage);
             throw new Error(errorMessage);
@@ -51,7 +51,7 @@ export const useConvexGame = (walletAddress?: string) => {
         console.log('Starting game, user:', user);
         if (!user) {
             const errorMsg = 'User must be created before starting game';
-            console.error(errorMsg);
+            console.log(errorMsg);
             setError(errorMsg);
             throw new Error(errorMsg);
         }
@@ -65,7 +65,7 @@ export const useConvexGame = (walletAddress?: string) => {
             setCurrentSessionId(sessionId);
             return sessionId;
         } catch (err) {
-            console.error('Error starting game:', err);
+            console.log('Error starting game:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to start game';
             setError(errorMessage);
             throw new Error(errorMessage);
@@ -99,7 +99,7 @@ export const useConvexGame = (walletAddress?: string) => {
             });
             console.log('Progress updated successfully');
         } catch (err) {
-            console.error('Error updating progress:', err);
+            console.log('Error updating progress:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to update progress';
             setError(errorMessage);
         }
@@ -120,7 +120,7 @@ export const useConvexGame = (walletAddress?: string) => {
             });
             console.log('Question stats updated successfully');
         } catch (err) {
-            console.error('Error updating question stats:', err);
+            console.log('Error updating question stats:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to update question stats';
             setError(errorMessage);
         }
@@ -141,7 +141,7 @@ export const useConvexGame = (walletAddress?: string) => {
             });
             console.log('Level completed successfully');
         } catch (err) {
-            console.error('Error completing level:', err);
+            console.log('Error completing level:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to complete level';
             setError(errorMessage);
         }
@@ -164,7 +164,7 @@ export const useConvexGame = (walletAddress?: string) => {
             console.log('Game session ended successfully');
             setCurrentSessionId(null);
         } catch (err) {
-            console.error('Error ending game:', err);
+            console.log('Error ending game:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to end game';
             setError(errorMessage);
         }
@@ -185,7 +185,7 @@ export const useConvexGame = (walletAddress?: string) => {
             console.log('Rewards claimed successfully:', rewards);
             return rewards;
         } catch (err) {
-            console.error('Error claiming rewards:', err);
+            console.log('Error claiming rewards:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to claim rewards';
             setError(errorMessage);
             throw new Error(errorMessage);
@@ -241,7 +241,7 @@ export const useUsernameValidation = () => {
 
     const validateUsername = useCallback(async (username: string) => {
         console.log('Validating username:', username);
-        
+
         if (!username || username.length < 3) {
             return { isValid: false, message: 'Username must be at least 3 characters long' };
         }
@@ -263,7 +263,7 @@ export const useUsernameValidation = () => {
             }
             return { isValid: true, message: 'Username is available' };
         } catch (err) {
-            console.error('Error checking username availability:', err);
+            console.log('Error checking username availability:', err);
             return { isValid: false, message: 'Error checking username availability' };
         } finally {
             setIsCheckingUsername(false);

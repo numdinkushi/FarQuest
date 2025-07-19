@@ -22,17 +22,17 @@ export const useUserManagement = (walletAddress: string) => {
         setFetchingUsername(true);
         try {
             const response = await fetch(`/api/farcaster/user?address=${encodeURIComponent(address)}`);
-            
+
             if (!response.ok) {
                 throw new Error(`Failed to fetch user data: ${response.status}`);
             }
-            
+
             const data = await response.json();
-            
+
             // Return the username if found, otherwise fallback to a default
             return data.username || `Player ${address.slice(-4)}`;
         } catch (error) {
-            console.error('Error fetching username from Neynar:', error);
+            console.log('Error fetching username from Neynar:', error);
             // Fallback to a default username based on wallet address
             return `Player ${address.slice(-4)}`;
         } finally {
@@ -58,16 +58,16 @@ export const useUserManagement = (walletAddress: string) => {
                 // User doesn't exist, create it
                 console.log('Auto-creating user for wallet:', walletAddress);
                 setAutoCreateAttempted(true);
-                
+
                 try {
                     // Fetch username from Neynar API
                     const username = await fetchUsernameFromNeynar(walletAddress);
                     console.log('Fetched username:', username);
-                    
-                    await createUserWithUsername(username, true);
+
+                    await createUserWithUsername(username, false);
                     console.log('User auto-created successfully with username:', username);
                 } catch (error) {
-                    console.error('Auto user creation failed:', error);
+                    console.log('Auto user creation failed:', error);
                     // Don't throw here - let the user handle it manually if needed
                 }
             } else {
@@ -102,15 +102,15 @@ export const useUserManagement = (walletAddress: string) => {
         try {
             await createUser(username.trim(), walletAddress, isOG);
         } catch (error) {
-            console.error('Failed to create user:', error);
+            console.log('Failed to create user:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to create user';
-            
+
             // If user already exists, don't treat it as an error
             if (errorMessage.includes('User already exists')) {
                 console.log('User already exists, continuing...');
                 return; // Don't throw, just return successfully
             }
-            
+
             setUserCreationError(errorMessage);
             throw error;
         } finally {
@@ -128,7 +128,7 @@ export const useUserManagement = (walletAddress: string) => {
             const username = await fetchUsernameFromNeynar(walletAddress);
             await createUserWithUsername(username, isOG);
         } catch (error) {
-            console.error('Failed to create user with fetched username:', error);
+            console.log('Failed to create user with fetched username:', error);
             throw error;
         }
     };

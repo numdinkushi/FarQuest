@@ -10,7 +10,7 @@ export const createUser = mutation({
     },
     handler: async (ctx, args) => {
         console.log("Creating user with args:", args);
-        
+
         // Check if user already exists
         const existingUser = await ctx.db
             .query("users")
@@ -71,6 +71,37 @@ export const createUser = mutation({
     },
 });
 
+// Update user's OG status after Self Protocol verification
+export const updateUserOGStatus = mutation({
+    args: {
+        address: v.string(),
+        isOG: v.boolean(),
+    },
+    handler: async (ctx, args) => {
+        console.log("Updating OG status for address:", args.address, "isOG:", args.isOG);
+
+        // Find user by address
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_address", (q) => q.eq("address", args.address))
+            .first();
+
+        if (!user) {
+            console.log("User not found for address:", args.address);
+            throw new Error("User not found");
+        }
+
+        // Update the user's OG status
+        await ctx.db.patch(user._id, {
+            isOG: args.isOG,
+            lastPlayedAt: Date.now(),
+        });
+
+        console.log("OG status updated successfully for user:", user._id);
+        return user._id;
+    },
+});
+
 // Update user's game progress
 export const updateGameProgress = mutation({
     args: {
@@ -87,10 +118,10 @@ export const updateGameProgress = mutation({
     },
     handler: async (ctx, args) => {
         console.log("Updating game progress for user:", args.userId);
-        
+
         const user = await ctx.db.get(args.userId);
         if (!user) {
-            console.error("User not found:", args.userId);
+            console.log("User not found:", args.userId);
             throw new Error("User not found");
         }
 
@@ -119,10 +150,10 @@ export const updateQuestionStats = mutation({
     },
     handler: async (ctx, args) => {
         console.log("Updating question stats for user:", args.userId, "isCorrect:", args.isCorrect);
-        
+
         const user = await ctx.db.get(args.userId);
         if (!user) {
-            console.error("User not found:", args.userId);
+            console.log("User not found:", args.userId);
             throw new Error("User not found");
         }
 
@@ -149,10 +180,10 @@ export const completeDifficultyLevel = mutation({
     },
     handler: async (ctx, args) => {
         console.log("Completing difficulty level for user:", args.userId, "difficulty:", args.difficulty);
-        
+
         const user = await ctx.db.get(args.userId);
         if (!user) {
-            console.error("User not found:", args.userId);
+            console.log("User not found:", args.userId);
             throw new Error("User not found");
         }
 
@@ -178,17 +209,17 @@ export const startGameSession = mutation({
     },
     handler: async (ctx, args) => {
         console.log("Starting game session for user:", args.userId);
-        
+
         const user = await ctx.db.get(args.userId);
         if (!user) {
-            console.error("User not found:", args.userId);
+            console.log("User not found:", args.userId);
             throw new Error("User not found");
         }
 
         // Get current stats before resetting
-        const currentTotalQuestionsAnswered = user.totalQuestionsAnswered;
-        const currentTotalCorrectAnswers = user.totalCorrectAnswers;
-        const currentTotalWrongAnswers = user.totalWrongAnswers;
+        // const currentTotalQuestionsAnswered = user.totalQuestionsAnswered;
+        // const currentTotalCorrectAnswers = user.totalCorrectAnswers;
+        // const currentTotalWrongAnswers = user.totalWrongAnswers;
 
         // Reset user's game state for new session
         await ctx.db.patch(args.userId, {
@@ -234,16 +265,16 @@ export const endGameSession = mutation({
     },
     handler: async (ctx, args) => {
         console.log("Ending game session:", args.sessionId, "for user:", args.userId);
-        
+
         const user = await ctx.db.get(args.userId);
         if (!user) {
-            console.error("User not found:", args.userId);
+            console.log("User not found:", args.userId);
             throw new Error("User not found");
         }
 
         const session = await ctx.db.get(args.sessionId);
         if (!session) {
-            console.error("Session not found:", args.sessionId);
+            console.log("Session not found:", args.sessionId);
             throw new Error("Session not found");
         }
 
@@ -276,10 +307,10 @@ export const claimRewards = mutation({
     },
     handler: async (ctx, args) => {
         console.log("Claiming rewards for user:", args.userId);
-        
+
         const user = await ctx.db.get(args.userId);
         if (!user) {
-            console.error("User not found:", args.userId);
+            console.log("User not found:", args.userId);
             throw new Error("User not found");
         }
 
@@ -306,7 +337,7 @@ export const checkUsernameAvailability = mutation({
     },
     handler: async (ctx, args) => {
         console.log("Checking username availability:", args.username);
-        
+
         const existingUser = await ctx.db
             .query("users")
             .withIndex("by_username", (q) => q.eq("username", args.username))
