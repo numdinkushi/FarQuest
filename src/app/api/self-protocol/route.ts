@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserIdentifier, SelfBackendVerifier } from "@selfxyz/core";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../convex/_generated/api";
-import { SELF_ENDPOINT } from "~/components/app/self-protocol/self";
 
 const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL || "";
 const convex = new ConvexHttpClient(CONVEX_URL);

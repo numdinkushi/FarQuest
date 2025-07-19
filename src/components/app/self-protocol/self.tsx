@@ -63,7 +63,7 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
       const app = new SelfAppBuilder({
         appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Farquest",
         scope: "farquest",
-        endpoint: SELF_ENDPOINT,
+        endpoint: SELF_ENDPOINT || "https://far-quest.vercel.app/api/self-protocol",
         endpointType: "https",
         logoBase64: APP_ICON_URL,
         userId: address,
