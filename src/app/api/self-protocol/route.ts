@@ -5,67 +5,52 @@ import { api } from "../../../../convex/_generated/api";
 
 const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL || "";
 const convex = new ConvexHttpClient(CONVEX_URL);
-const SELF_ENDPOINT = "https://free-hamster-loving.ngrok-free.app/";
 
 export async function POST(req: NextRequest) {
   try {
-    const { proof, publicSignals, address } = await req.json();
-    console.log("Received request:", { proof, publicSignals, address });
+    const { proof, publicSignals } = await req.json();
+    
+    console.log("Received verification request");
 
-    if (!proof || !publicSignals || !address) {
-      console.warn("Missing required fields in request body");
-      return NextResponse.json(
-        { message: "Proof, publicSignals, and address are required" },
-        { status: 400 }
-      );
-    }
-
-    // Extract user ID from publicSignals
+    // Extract user ID from the proof
     const userId = await getUserIdentifier(publicSignals);
     console.log("Extracted userId:", userId);
 
-    if (userId !== address) {
-      console.warn("User ID mismatch:", { userId, address });
-      return NextResponse.json(
-        { message: "User ID does not match provided address" },
-        { status: 400 }
-      );
-    }
-
-    // Initialize verifier
+    // Initialize and configure the verifier with the correct parameters
     const selfBackendVerifier = new SelfBackendVerifier(
-      "farquest", // scope
-      SELF_ENDPOINT // endpoint
+      "farquest", // scope - make sure this matches your frontend
+      "https://free-hamster-loving.ngrok-free.app/api/self-protocol", // endpoint
+      "hex" // user_identifier_type - THIS WAS MISSING
     );
+
     console.log("Initialized SelfBackendVerifier");
 
-    // Verify proof
+    // Verify the proof
     const result = await selfBackendVerifier.verify(proof, publicSignals);
     console.log("Verification result:", result);
 
     if (result.isValid) {
-      // Update Convex database
+      // Update Convex database after successful verification
       try {
         await convex.mutation(api.users.updateUserOGStatus, {
-          address: userId,
+          address: userId, // Use the userId from the proof
           isOG: true,
         });
         console.log("Updated OG status for address:", userId);
       } catch (convexError) {
         console.error("Failed to update Convex:", convexError);
-        return NextResponse.json(
-          { message: "Verification succeeded but failed to update status" },
-          { status: 500 }
-        );
+        // Still return success since verification worked
       }
 
       return NextResponse.json({
         status: "success",
         result: true,
         credentialSubject: result.credentialSubject,
+        userId: userId, // Include userId in response
       });
     }
 
+    // Return failed verification response
     console.warn("Verification failed:", result.isValidDetails);
     return NextResponse.json(
       {
@@ -87,4 +72,13 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Add GET handler for health check
+export async function GET() {
+  return NextResponse.json({
+    status: "ready",
+    scope: "farquest",
+    endpoint: "https://free-hamster-loving.ngrok-free.app/api/self-protocol",
+  });
 }

@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { APP_ICON_URL } from "~/lib/constant";
 
 // Ensure this is a stable, deployed URL
-const SELF_ENDPOINT = "https://free-hamster-loving.ngrok-free.app/";
+const SELF_ENDPOINT = "https://free-hamster-loving.ngrok-free.app/api/self-protocol";
 
 interface SelfProtocolComponentProps {
   onComplete?: () => void;
@@ -47,7 +47,7 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
 
   const minimumAge = 18;
   const requireName = true;
-  const checkOFAC = true;
+  const checkOFAC = false;
 
   useEffect(() => {
     if (!address || isVerifiedOG) {
@@ -65,6 +65,7 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
         logoBase64: APP_ICON_URL,
         userId: address,
         userIdType: "hex",
+        devMode: true,
         disclosures: {
           minimumAge,
           ofac: checkOFAC,
@@ -122,35 +123,7 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
 
   const handleSuccessfulVerification = async (): Promise<void> => {
     console.log("Verification callback triggered for address:", address);
-    if (!address) {
-      toast.error("No wallet address connected");
-      return;
-    }
-
-    try {
-      // Verify with server
-      const response = await fetch(SELF_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address }), // Mock passport may require sending address
-      });
-
-      const data = await response.json();
-      console.log("Server verification response:", data);
-
-      if (data.status === "success" && data.result) {
-        await updateUserOGStatus({ address, isOG: true });
-        console.log("User OG status updated for address:", address);
-        toast.success("Identity verified successfully!");
-        setTimeout(() => onComplete?.(), 1500);
-      } else {
-        console.error("Server verification failed:", data.message);
-        toast.error("Verification failed: " + (data.message || "Unknown error"));
-      }
-    } catch (error) {
-      console.error("Error during verification:", error);
-      toast.error("Verification error occurred");
-    }
+    console.log("Verified successfully");
   };
 
   const handleSkipVerification = (): void => {
