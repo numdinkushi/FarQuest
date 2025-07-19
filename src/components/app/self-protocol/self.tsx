@@ -23,7 +23,8 @@ import { APP_URL } from "~/constants";
 
 // Ensure this is a stable, deployed URL
 // const SELF_ENDPOINT = "https://free-hamster-loving.ngrok-free.app/api/self-protocol";
-export const SELF_ENDPOINT = `${APP_URL}/api/self-protocol`;
+const SELF_ENDPOINT = "https://far-quest.vercel.app/api/self-protocol";
+// export const SELF_ENDPOINT = `${APP_URL}/api/self-protocol`;
 
 interface SelfProtocolComponentProps {
   onComplete?: () => void;
