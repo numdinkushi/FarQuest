@@ -19,12 +19,8 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { toast } from "sonner";
 import { APP_ICON_URL } from "~/lib/constant";
-import { APP_URL } from "~/constants";
 
-// Ensure this is a stable, deployed URL
-// const SELF_ENDPOINT = "https://free-hamster-loving.ngrok-free.app/api/self-protocol";
-const SELF_ENDPOINT = "https://far-quest.vercel.app/api/self-protocol";
-// export const SELF_ENDPOINT = `${APP_URL}/api/self-protocol`;
+const SELF_ENDPOINT =  "https://far-quest.vercel.app/api/self-protocol";
 
 interface SelfProtocolComponentProps {
   onComplete?: () => void;
@@ -40,11 +36,10 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
   const [selfApp, setSelfApp] = useState<SelfApp | null>(null);
   const [universalLink, setUniversalLink] = useState<string>("");
 
-  // Convex hooks
   const userData = useQuery(
-  api.queries.getUserByAddress,
-  address && address.length > 0 ? { address } : "skip"
-);
+    api.queries.getUserByAddress,
+    address && address.length > 0 ? { address } : "skip"
+  );
 
   const updateUserOGStatus = useMutation(api.users.updateUserOGStatus);
 
@@ -65,7 +60,7 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
       const app = new SelfAppBuilder({
         appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Farquest",
         scope: "farquest",
-        endpoint:  "https://far-quest.vercel.app/api/self-protocol",
+        endpoint: SELF_ENDPOINT,
         endpointType: "https",
         logoBase64: APP_ICON_URL,
         userId: address,
