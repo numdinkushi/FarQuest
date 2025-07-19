@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     // Initialize and configure the verifier with the correct parameters
     const selfBackendVerifier = new SelfBackendVerifier(
       "farquest", // scope - make sure this matches your frontend
-      SELF_ENDPOINT, // endpoint
+      "https://far-quest.vercel.app/api/self-protocol", // endpoint
       "hex" // user_identifier_type - THIS WAS MISSING
     );
 
