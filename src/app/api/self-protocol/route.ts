@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserIdentifier, SelfBackendVerifier } from "@selfxyz/core";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../convex/_generated/api";
+import { SELF_ENDPOINT } from "~/components/app/self-protocol/self";
 
 const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL || "";
 const convex = new ConvexHttpClient(CONVEX_URL);
@@ -9,7 +10,7 @@ const convex = new ConvexHttpClient(CONVEX_URL);
 export async function POST(req: NextRequest) {
   try {
     const { proof, publicSignals } = await req.json();
-    
+
     console.log("Received verification request");
 
     // Extract user ID from the proof
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     // Initialize and configure the verifier with the correct parameters
     const selfBackendVerifier = new SelfBackendVerifier(
       "farquest", // scope - make sure this matches your frontend
-      "https://free-hamster-loving.ngrok-free.app/api/self-protocol", // endpoint
+      SELF_ENDPOINT, // endpoint
       "hex" // user_identifier_type - THIS WAS MISSING
     );
 

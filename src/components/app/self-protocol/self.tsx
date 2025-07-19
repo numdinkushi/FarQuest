@@ -19,9 +19,11 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { toast } from "sonner";
 import { APP_ICON_URL } from "~/lib/constant";
+import { APP_URL } from "~/constants";
 
 // Ensure this is a stable, deployed URL
-const SELF_ENDPOINT = "https://free-hamster-loving.ngrok-free.app/api/self-protocol";
+// const SELF_ENDPOINT = "https://free-hamster-loving.ngrok-free.app/api/self-protocol";
+export const SELF_ENDPOINT = `${APP_URL}/api/self-protocol`;
 
 interface SelfProtocolComponentProps {
   onComplete?: () => void;
