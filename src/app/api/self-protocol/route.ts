@@ -20,11 +20,10 @@ export async function POST(req: NextRequest) {
     const baseUrl = `${protocol}://${host}`;
 
     const selfBackendVerifier = new SelfBackendVerifier(
-      "farquest",
-      `${baseUrl}/api/self-protocol`,
-      verification_config,
-      process.env.NODE_ENV === "development",
-      "hex"
+      "farquest", // scope
+      `${baseUrl}/api/self-protocol`, // endpoint
+      verification_config // config
+      // Removed the extra parameters that were causing the error
     );
 
     const result = await selfBackendVerifier.verify(proof, publicSignals);
