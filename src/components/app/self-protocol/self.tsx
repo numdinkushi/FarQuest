@@ -20,7 +20,13 @@ import { api } from "../../../../convex/_generated/api";
 import { toast } from "sonner";
 import { APP_ICON_URL } from "~/lib/constant";
 
-const SELF_ENDPOINT =  "https://far-quest.vercel.app/api/self-protocol";
+// Define base URLs
+const BASE_URL = process.env.NODE_ENV === "development"
+  ? "https://free-hamster-loving.ngrok-free.app"
+  : "https://far-quest.vercel.app";
+
+const SELF_ENDPOINT = `${BASE_URL}/api/self-protocol`;
+const LOGO_URL = `${BASE_URL}/icon.png`;
 
 interface SelfProtocolComponentProps {
   onComplete?: () => void;
@@ -58,18 +64,26 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
     try {
       console.log("Initializing SelfAppBuilder with address:", address);
       const app = new SelfAppBuilder({
-        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Farquest",
+        version: 2,
+        appName: "Farquest",
         scope: "farquest",
         endpoint: SELF_ENDPOINT,
         endpointType: "https",
-        logoBase64: APP_ICON_URL,
-        userId: address,
+        logoBase64: LOGO_URL, // Updated to use same domain as endpoint
+        userId: address?.toLowerCase(),
         userIdType: "hex",
         devMode: true,
+        userDefinedData: "Farquest Identity Verification",
         disclosures: {
-          minimumAge,
-          ofac: checkOFAC,
-          name: requireName,
+          minimumAge: 18,
+          ofac: false,
+          name: true,
+          nationality: false,
+          gender: false,
+          date_of_birth: false,
+          passport_number: false,
+          expiry_date: false,
+          issuing_state: false
         },
       }).build();
 
@@ -123,7 +137,15 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
 
   const handleSuccessfulVerification = async (): Promise<void> => {
     console.log("Verification callback triggered for address:", address);
-    console.log("Verified successfully");
+    try {
+      await updateUserOGStatus({ address: address as string, isOG: true });
+      console.log("Verified successfully");
+      toast.success("Verification successful!");
+      onComplete?.();
+    } catch (error) {
+      console.error("Failed to update OG status:", error);
+      toast.error("Failed to update verification status");
+    }
   };
 
   const handleSkipVerification = (): void => {

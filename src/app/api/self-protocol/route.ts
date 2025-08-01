@@ -2,10 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserIdentifier, SelfBackendVerifier } from "@selfxyz/core";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../../convex/_generated/api";
+import { DefaultConfigStore } from "@selfxyz/core";
 
 const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL || "";
 const convex = new ConvexHttpClient(CONVEX_URL);
-const SELF_ENDPOINT = "https://far-quest.vercel.app/api/self-protocol";
+
+// Define the endpoints based on environment
+const SELF_ENDPOINT = process.env.NODE_ENV === "development"
+  ? "https://free-hamster-loving.ngrok-free.app/api/self-protocol"
+  : "https://far-quest.vercel.app/api/self-protocol";
+
+const verification_config = {
+  minimumAge: 18,
+  ofac: false,
+  name: true,
+  nationality: false,
+  gender: false,
+  date_of_birth: false,
+  passport_number: false,
+  expiry_date: false,
+  issuing_state: false
+};
+
+const configStore = new DefaultConfigStore(verification_config);
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,8 +38,9 @@ export async function POST(req: NextRequest) {
     const selfBackendVerifier = new SelfBackendVerifier(
       "farquest",
       SELF_ENDPOINT,
-      "hex",
-      true
+      configStore,
+      process.env.NODE_ENV === "development",
+      "hex"
     );
 
     console.log("Initialized SelfBackendVerifier");
