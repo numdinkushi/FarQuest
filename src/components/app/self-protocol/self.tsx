@@ -74,7 +74,6 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
         userId: address?.toLowerCase(),
         userIdType: "hex",
         devMode: process.env.NODE_ENV === "development",
-        userDefinedData: "Farquest Identity Verification",
         disclosures: {
           minimumAge: 18,
           ofac: false,
