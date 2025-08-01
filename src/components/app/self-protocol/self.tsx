@@ -20,13 +20,13 @@ import { api } from "../../../../convex/_generated/api";
 import { toast } from "sonner";
 import { APP_ICON_URL } from "~/lib/constant";
 
-// Define base URLs
+// Define base URL for consistency
 const BASE_URL = process.env.NODE_ENV === "development"
   ? "https://free-hamster-loving.ngrok-free.app"
   : "https://far-quest.vercel.app";
 
 const SELF_ENDPOINT = `${BASE_URL}/api/self-protocol`;
-const LOGO_URL = `${BASE_URL}/icon.png`;
+const LOGO_URL = `${BASE_URL}/icon.png`; // Use same domain as endpoint
 
 interface SelfProtocolComponentProps {
   onComplete?: () => void;
@@ -56,8 +56,8 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
   const checkOFAC = false;
 
   useEffect(() => {
-    if (!address || isVerifiedOG) {
-      console.log("Skipping Self app initialization: ", { address, isVerifiedOG });
+    if (!address) {
+      console.log("No wallet address available");
       return;
     }
 
@@ -66,37 +66,28 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
       const app = new SelfAppBuilder({
         version: 2,
         appName: "Farquest",
-        scope: "farquest",
+        scope: "farquest", // Must match backend
         endpoint: SELF_ENDPOINT,
-        endpointType: "https",
-        logoBase64: LOGO_URL, // Updated to use same domain as endpoint
+        endpointType: "staging_https", // Change this from "https" to "staging_https"
+        logoBase64: "https://free-hamster-loving.ngrok-free.app/icon.png",
         userId: address?.toLowerCase(),
-        userIdType: "hex",
-        devMode: true,
+        userIdType: "hex", // Must match backend
+        devMode: true, // Must match backend
         userDefinedData: "Farquest Identity Verification",
         disclosures: {
           minimumAge: 18,
           ofac: false,
-          name: true,
-          nationality: false,
-          gender: false,
-          date_of_birth: false,
-          passport_number: false,
-          expiry_date: false,
-          issuing_state: false
-        },
+          name: true
+        }
       }).build();
 
       console.log("SelfApp built successfully:", app);
       setSelfApp(app);
-      const link = getUniversalLink(app);
-      console.log("Generated universal link:", link);
-      setUniversalLink(link);
     } catch (error) {
       console.error("Failed to initialize Self app:", error);
       toast.error("Failed to initialize verification");
     }
-  }, [address, isVerifiedOG]);
+  }, [address]);
 
   const displayToast = (message: string): void => {
     console.log("Displaying toast:", message);
