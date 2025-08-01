@@ -4,12 +4,6 @@ import { SelfBackendVerifier } from "@selfxyz/core";
 export const dynamic = 'force-dynamic';
 export const runtime = 'edge';
 
-const verification_config = {
-  minimumAge: 18,
-  ofac: false,
-  name: true
-};
-
 export async function POST(req: NextRequest) {
   try {
     const { proof, publicSignals } = await req.json();
@@ -22,8 +16,8 @@ export async function POST(req: NextRequest) {
     const selfBackendVerifier = new SelfBackendVerifier(
       "farquest", // scope
       `${baseUrl}/api/self-protocol`, // endpoint
-      verification_config // config
-      // Removed the extra parameters that were causing the error
+      "hex", // userIdType - this is what the constructor expects
+      process.env.NODE_ENV === "development" // devMode
     );
 
     const result = await selfBackendVerifier.verify(proof, publicSignals);
