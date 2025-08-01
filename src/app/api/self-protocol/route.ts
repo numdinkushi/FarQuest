@@ -1,28 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SelfBackendVerifier } from "@selfxyz/core";
 
-const SELF_ENDPOINT = process.env.NODE_ENV === "development"
-  ? "https://free-hamster-loving.ngrok-free.app/api/self-protocol"
-  : "https://far-quest.vercel.app/api/self-protocol";
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
-// Create verification config directly
 const verification_config = {
   minimumAge: 18,
   ofac: false,
   name: true
 };
 
-const selfBackendVerifier = new SelfBackendVerifier(
-  "farquest",
-  SELF_ENDPOINT,
-  verification_config, // Pass config directly
-  true, // devMode
-  "hex"
-);
-
 export async function POST(req: NextRequest) {
   try {
     const { proof, publicSignals } = await req.json();
+
+    // Get the host from the request
+    const host = req.headers.get('host');
+    const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+    const baseUrl = `${protocol}://${host}`;
+
+    const selfBackendVerifier = new SelfBackendVerifier(
+      "farquest",
+      `${baseUrl}/api/self-protocol`,
+      verification_config,
+      process.env.NODE_ENV === "development",
+      "hex"
+    );
+
     const result = await selfBackendVerifier.verify(proof, publicSignals);
 
     if (result.isValid) {
@@ -40,17 +44,10 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
 
   } catch (error) {
+    console.error("Verification error:", error);
     return NextResponse.json({
       status: "error",
       message: error instanceof Error ? error.message : "Unknown error"
     }, { status: 500 });
   }
-}
-
-export async function GET() {
-  return NextResponse.json({
-    status: "ready",
-    scope: "farquest",
-    endpoint: SELF_ENDPOINT,
-  });
 }

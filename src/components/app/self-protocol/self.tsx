@@ -67,12 +67,14 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
         version: 2,
         appName: "Farquest",
         scope: "farquest",
-        endpoint: SELF_ENDPOINT,
-        endpointType: "staging_https", // Changed to staging_https
-        logoBase64: "https://free-hamster-loving.ngrok-free.app/icon.png",
+        endpoint: process.env.NODE_ENV === "development"
+          ? "https://free-hamster-loving.ngrok-free.app/api/self-protocol"
+          : `${window.location.origin}/api/self-protocol`, // Use actual deployment URL
+        endpointType: "staging_https",
+        logoBase64: `${window.location.origin}/icon.png`, // Use actual deployment URL
         userId: address?.toLowerCase(),
         userIdType: "hex",
-        devMode: true,
+        devMode: process.env.NODE_ENV === "development",
         userDefinedData: "Farquest Identity Verification",
         disclosures: {
           minimumAge: 18,
