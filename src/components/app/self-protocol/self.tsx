@@ -66,13 +66,13 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
       const app = new SelfAppBuilder({
         version: 2,
         appName: "Farquest",
-        scope: "farquest", // Must match backend
+        scope: "farquest",
         endpoint: SELF_ENDPOINT,
-        endpointType: "staging_https", // Change this from "https" to "staging_https"
+        endpointType: "staging_https", // Changed to staging_https
         logoBase64: "https://free-hamster-loving.ngrok-free.app/icon.png",
         userId: address?.toLowerCase(),
-        userIdType: "hex", // Must match backend
-        devMode: true, // Must match backend
+        userIdType: "hex",
+        devMode: true,
         userDefinedData: "Farquest Identity Verification",
         disclosures: {
           minimumAge: 18,
