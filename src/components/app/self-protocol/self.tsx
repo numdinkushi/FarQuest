@@ -64,14 +64,13 @@ const SelfProtocolComponent: React.FC<SelfProtocolComponentProps> = ({ onComplet
     try {
       console.log("Initializing SelfAppBuilder with address:", address);
       const app = new SelfAppBuilder({
-        version: 2,
         appName: "Farquest",
         scope: "farquest",
         endpoint: process.env.NODE_ENV === "development"
           ? "https://free-hamster-loving.ngrok-free.app/api/self-protocol"
-          : `${window.location.origin}/api/self-protocol`, // Use actual deployment URL
+          : `${window.location.origin}/api/self-protocol`,
         endpointType: "staging_https",
-        logoBase64: `${window.location.origin}/icon.png`, // Use actual deployment URL
+        logoBase64: `${window.location.origin}/icon.png`,
         userId: address?.toLowerCase(),
         userIdType: "hex",
         devMode: process.env.NODE_ENV === "development",
